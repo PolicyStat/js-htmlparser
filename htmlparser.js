@@ -23,9 +23,7 @@
  *
  */
 
-/*jslint regexp: false, node: true
- */
-
+/*jslint regexp: false, node: true, newcap: false */
 /*global DOMDocument */
 
 function makeMap(str) {
@@ -198,7 +196,7 @@ function HTMLParser(html, handler) {
 
 function HTMLtoXML(html) {
     var results = "";
-    var p = new HTMLParser(html, {
+    HTMLParser(html, {
         start: function (tag, attrs, unary) {
             results += "<" + tag;
             for (var i = 0; i < attrs.length; i++) {
@@ -265,7 +263,7 @@ function HTMLtoDOM(html, doc) {
     // If we're working with a document, inject contents into
     // the body element
     var curParentNode = one.body;
-    var p = new HTMLParser(html, {
+    HTMLParser(html, {
         start: function (tagName, attrs, unary) {
             // If it's a pre-built element, then we can ignore
             // its construction
