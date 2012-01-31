@@ -39,6 +39,11 @@ var startTag = /^<([-A-Za-z0-9_]+)((?:\s+\w+(?:\s*=\s*(?:(?:"[^"]*")|(?:'[^']*')
 endTag = /^<\/([-A-Za-z0-9_]+)[^>]*>/,
 attr = /([-A-Za-z0-9_]+)(?:\s*=\s*(?:(?:"((?:\\.|[^"])*)")|(?:'((?:\\.|[^'])*)')|([^>\s]+)))?/g;
 
+var comment = {
+    start: '<!--',
+    end: '-->'
+};
+
 // Empty Elements - HTML 4.01
 var empty = makeMap('area,base,basefont,br,col,frame,hr,img,input,isindex,link,meta,param,embed');
 
@@ -139,22 +144,23 @@ function HTMLParser(html, handler) {
 
     while (html) {
         chars = true;
+        // Comment
+        if (html.indexOf(comment.start) === 0) {
+            index = html.indexOf(comment.end);
+            if (index >= 0) {
+                if (handler.comment) {
+                    handler.comment(html.substring(comment.start.length,
+                                                   index));
+                }
+                html = html.substring(index + comment.end.length);
+                chars = false;
+            }
+            // end tag
+        }
 
         // Make sure we're not in a script or style element
         if (!stack.last() || !special[stack.last()]) {
-
-            // Comment
-            if (html.indexOf('<!--') === 0) {
-                index = html.indexOf('-->');
-                if (index >= 0) {
-                    if (handler.comment) {
-                        handler.comment(html.substring(4, index));
-                    }
-                    html = html.substring(index + 3);
-                    chars = false;
-                }
-                // end tag
-            } else if (html.indexOf('</') === 0) {
+            if (html.indexOf('</') === 0) {
                 match = html.match(endTag);
                 if (match) {
                     html = html.substring(match[0].length);
