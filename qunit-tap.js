@@ -160,7 +160,8 @@ var qunitTap = function qunitTap(qunitObject, printLikeFunction, options) {
         if (!qu.tap.noPlan) {
             return;
         }
-        qu.tap.puts((initialCount + 1) + '..' + qu.tap.count);
+
+        qu.tap.puts('');
         qu.tap.puts('Failed: ' + arg.failed);
         qu.tap.puts('Passed: ' + arg.passed);
         qu.tap.puts('Total: ' + arg.total);
