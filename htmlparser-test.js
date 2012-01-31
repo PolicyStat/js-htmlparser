@@ -67,7 +67,7 @@ test('it should add missing closing tags', 2, function () {
     );
 });
 
-test('it should parse comments', 3, function () {
+test('it should parse comments', 4, function () {
     equal(
         HTMLtoXML('<style><!-- foo --></style>'),
         '<style><!-- foo --></style>',
@@ -76,7 +76,12 @@ test('it should parse comments', 3, function () {
     equal(
         HTMLtoXML('<style><!-- \n --></style>'),
         '<style><!-- \n --></style>',
-        'embedded newlines within style tags'
+        'embedded newline within style tags'
+    );
+    equal(
+        HTMLtoXML('<style> <!-- \n --></style>'),
+        '<style> <!-- \n --></style>',
+        'embedded newline within style tags leading space'
     );
     equal(
         HTMLtoXML('foo <!-- bar --> zoo'),

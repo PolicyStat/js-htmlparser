@@ -143,17 +143,25 @@ function HTMLParser(html, handler) {
     }
 
     while (html) {
-        chars = true;
+        index = html.indexOf('<');
+        var text = index < 0 ? html : html.substring(0, index);
+        html = index < 0 ? '' : html.substring(index);
+        if (handler.chars) {
+            handler.chars(text);
+        }
+
         // Comment
-        if (html.indexOf(comment.start) === 0) {
-            index = html.indexOf(comment.end);
+        var comment_start = html.indexOf(comment.start);
+        if (comment_start === 0) {
+            index = html.indexOf(comment.end, comment_start);
             if (index >= 0) {
                 if (handler.comment) {
-                    handler.comment(html.substring(comment.start.length,
-                                                   index));
+                    var comment_text = html.substring(comment_start +
+                                                   comment.start.length,
+                                                   index);
+                    handler.comment(comment_text);
                 }
                 html = html.substring(index + comment.end.length);
-                chars = false;
             }
             // end tag
         }
@@ -165,7 +173,6 @@ function HTMLParser(html, handler) {
                 if (match) {
                     html = html.substring(match[0].length);
                     match[0].replace(endTag, parseEndTag);
-                    chars = false;
                 }
                 // start tag
             } else if (html.indexOf('<') === 0) {
@@ -173,16 +180,6 @@ function HTMLParser(html, handler) {
                 if (match) {
                     html = html.substring(match[0].length);
                     match[0].replace(startTag, parseStartTag);
-                    chars = false;
-                }
-            }
-
-            if (chars) {
-                index = html.indexOf('<');
-                var text = index < 0 ? html : html.substring(0, index);
-                html = index < 0 ? '' : html.substring(index);
-                if (handler.chars) {
-                    handler.chars(text);
                 }
             }
 
