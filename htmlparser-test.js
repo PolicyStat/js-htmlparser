@@ -7,8 +7,7 @@ var htmlparse = require('./htmlparser.js');
 var HTMLtoXML = htmlparse.HTMLtoXML;
 
 qunitTap(QUnit, util.puts, {
-    noPlan: true,
-    showDetailsOnFailure: true
+    noPlan: true
 });
 
 QUnit.init();
@@ -17,7 +16,7 @@ QUnit.config.updateRate = 0;
 var test = QUnit.test;
 var equal = QUnit.equal;
 
-test('it should handle basic html', 4, function () {
+test('it should handle basic html', 7, function () {
     equal(
         HTMLtoXML('<span></span>'),
         '<span></span>',
@@ -31,12 +30,27 @@ test('it should handle basic html', 4, function () {
     equal(
         HTMLtoXML('<span\'></span\'>'),
         '<span></span>',
-        'Malformed'
+        'tag has trailing single quote'
     );
     equal(
         HTMLtoXML('<span"></span">'),
         '<span></span>',
-        'Malformed'
+        'tag has trailing double quote'
+    );
+    equal(
+        HTMLtoXML('<EM></EM>'),
+        '<em></em>',
+        'case insensitive em tag'
+    );
+    equal(
+        HTMLtoXML('<STYLE></STYLE>'),
+        '<style></style>',
+        'case insensitive style tag'
+    );
+    equal(
+        HTMLtoXML('<SCRIPT></SCRIPT>'),
+        '<script></script>',
+        'case insensitive script tag'
     );
 });
 

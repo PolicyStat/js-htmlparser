@@ -187,9 +187,10 @@ function HTMLParser(html, handler) {
             }
 
         } else {
-            var re = new RegExp('(.*)<\/' + stack.last() + '[^>]*>');
+            var tagName = stack.last();
+            var re = new RegExp('(.*)<\/' + tagName + '[^>]*>', 'i');
             html = html.replace(re, cdata_text_replace);
-            parseEndTag('', stack.last());
+            parseEndTag('', tagName);
         }
 
         if (html === last) {
