@@ -127,6 +127,17 @@ function HTMLParser(html, handler) {
         }
     }
 
+    function cdata_text_replace(all, text) {
+        text = text.replace(/<!--(.*?)-->/g, "$1")
+        .replace(/<!\[CDATA\[(.*?)\]\]>/g, "$1");
+
+        if (handler.chars) {
+            handler.chars(text);
+        }
+
+        return "";
+    }
+
     while (html) {
         chars = true;
 
@@ -171,17 +182,8 @@ function HTMLParser(html, handler) {
             }
 
         } else {
-            html = html.replace(new RegExp("(.*)<\/" + stack.last() + "[^>]*>"), function (all, text) {
-                text = text.replace(/<!--(.*?)-->/g, "$1")
-                .replace(/<!\[CDATA\[(.*?)\]\]>/g, "$1");
-
-                if (handler.chars) {
-                    handler.chars(text);
-                }
-
-                return "";
-            });
-
+            var re = new RegExp("(.*)<\/" + stack.last() + "[^>]*>");
+            html = html.replace(re, cdata_text_replace);
             parseEndTag("", stack.last());
         }
 
