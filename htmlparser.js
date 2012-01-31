@@ -27,7 +27,7 @@
 /*global DOMDocument */
 
 function makeMap(str) {
-    var obj = {}, items = str.split(",");
+    var obj = {}, items = str.split(',');
     for (var i = 0; i < items.length; i++) {
         obj[items[i]] = true;
     }
@@ -40,23 +40,23 @@ endTag = /^<\/([-A-Za-z0-9_]+)[^>]*>/,
 attr = /([-A-Za-z0-9_]+)(?:\s*=\s*(?:(?:"((?:\\.|[^"])*)")|(?:'((?:\\.|[^'])*)')|([^>\s]+)))?/g;
 
 // Empty Elements - HTML 4.01
-var empty = makeMap("area,base,basefont,br,col,frame,hr,img,input,isindex,link,meta,param,embed");
+var empty = makeMap('area,base,basefont,br,col,frame,hr,img,input,isindex,link,meta,param,embed');
 
 // Block Elements - HTML 4.01
-var block = makeMap("address,applet,blockquote,button,center,dd,del,dir,div,dl,dt,fieldset,form,frameset,hr,iframe,ins,isindex,li,map,menu,noframes,noscript,object,ol,p,pre,script,table,tbody,td,tfoot,th,thead,tr,ul");
+var block = makeMap('address,applet,blockquote,button,center,dd,del,dir,div,dl,dt,fieldset,form,frameset,hr,iframe,ins,isindex,li,map,menu,noframes,noscript,object,ol,p,pre,script,table,tbody,td,tfoot,th,thead,tr,ul');
 
 // Inline Elements - HTML 4.01
-var inline = makeMap("a,abbr,acronym,applet,b,basefont,bdo,big,br,button,cite,code,del,dfn,em,font,i,iframe,img,input,ins,kbd,label,map,object,q,s,samp,script,select,small,span,strike,strong,sub,sup,textarea,tt,u,var");
+var inline = makeMap('a,abbr,acronym,applet,b,basefont,bdo,big,br,button,cite,code,del,dfn,em,font,i,iframe,img,input,ins,kbd,label,map,object,q,s,samp,script,select,small,span,strike,strong,sub,sup,textarea,tt,u,var');
 
 // Elements that you can, intentionally, leave open
 // (and which close themselves)
-var closeSelf = makeMap("colgroup,dd,dt,li,options,p,td,tfoot,th,thead,tr");
+var closeSelf = makeMap('colgroup,dd,dt,li,options,p,td,tfoot,th,thead,tr');
 
-// Attributes that have their values filled in disabled="disabled"
-var fillAttrs = makeMap("checked,compact,declare,defer,disabled,ismap,multiple,nohref,noresize,noshade,nowrap,readonly,selected");
+// Attributes that have their values filled in disabled='disabled'
+var fillAttrs = makeMap('checked,compact,declare,defer,disabled,ismap,multiple,nohref,noresize,noshade,nowrap,readonly,selected');
 
 // Special Elements (can contain anything)
-var special = makeMap("script,style");
+var special = makeMap('script,style');
 
 function HTMLParser(html, handler) {
     var index, chars, match, stack = [], last = html;
@@ -69,12 +69,12 @@ function HTMLParser(html, handler) {
 
         if (block[tagName]) {
             while (stack.last() && inline[stack.last()]) {
-                parseEndTag("", stack.last());
+                parseEndTag('', stack.last());
             }
         }
 
         if (closeSelf[tagName] && stack.last() === tagName) {
-            parseEndTag("", tagName);
+            parseEndTag('', tagName);
         }
 
         unary = empty[tagName] || !!unary;
@@ -88,7 +88,7 @@ function HTMLParser(html, handler) {
                 var value = arguments[2] ? arguments[2] :
                     arguments[3] ? arguments[3] :
                     arguments[4] ? arguments[4] :
-                    fillAttrs[name] ? name : "";
+                    fillAttrs[name] ? name : '';
                 attrs.push({
                     name: name,
                     value: value,
@@ -128,14 +128,13 @@ function HTMLParser(html, handler) {
     }
 
     function cdata_text_replace(all, text) {
-        text = text.replace(/<!--(.*?)-->/g, "$1")
-        .replace(/<!\[CDATA\[(.*?)\]\]>/g, "$1");
+        text = text.replace(/<!--(.*?)-->/g, '$1').replace(/<!\[CDATA\[(.*?)\]\]>/g, '$1');
 
         if (handler.chars) {
             handler.chars(text);
         }
 
-        return "";
+        return '';
     }
 
     while (html) {
@@ -145,8 +144,8 @@ function HTMLParser(html, handler) {
         if (!stack.last() || !special[stack.last()]) {
 
             // Comment
-            if (html.indexOf("<!--") === 0) {
-                index = html.indexOf("-->");
+            if (html.indexOf('<!--') === 0) {
+                index = html.indexOf('-->');
                 if (index >= 0) {
                     if (handler.comment) {
                         handler.comment(html.substring(4, index));
@@ -155,7 +154,7 @@ function HTMLParser(html, handler) {
                     chars = false;
                 }
                 // end tag
-            } else if (html.indexOf("</") === 0) {
+            } else if (html.indexOf('</') === 0) {
                 match = html.match(endTag);
                 if (match) {
                     html = html.substring(match[0].length);
@@ -163,7 +162,7 @@ function HTMLParser(html, handler) {
                     chars = false;
                 }
                 // start tag
-            } else if (html.indexOf("<") === 0) {
+            } else if (html.indexOf('<') === 0) {
                 match = html.match(startTag);
                 if (match) {
                     html = html.substring(match[0].length);
@@ -173,22 +172,22 @@ function HTMLParser(html, handler) {
             }
 
             if (chars) {
-                index = html.indexOf("<");
+                index = html.indexOf('<');
                 var text = index < 0 ? html : html.substring(0, index);
-                html = index < 0 ? "" : html.substring(index);
+                html = index < 0 ? '' : html.substring(index);
                 if (handler.chars) {
                     handler.chars(text);
                 }
             }
 
         } else {
-            var re = new RegExp("(.*)<\/" + stack.last() + "[^>]*>");
+            var re = new RegExp('(.*)<\/' + stack.last() + '[^>]*>');
             html = html.replace(re, cdata_text_replace);
-            parseEndTag("", stack.last());
+            parseEndTag('', stack.last());
         }
 
         if (html === last) {
-            throw "Parse Error: " + html;
+            throw 'Parse Error: ' + html;
         }
         last = html;
     }
@@ -197,44 +196,44 @@ function HTMLParser(html, handler) {
 }
 
 function HTMLtoXML(html) {
-    var results = "";
+    var results = '';
     HTMLParser(html, {
         start: function (tag, attrs, unary) {
-            results += "<" + tag;
+            results += '<' + tag;
             for (var i = 0; i < attrs.length; i++) {
-                results += " " + attrs[i].name + '="' + attrs[i].escaped + '"';
+                results += ' ' + attrs[i].name + '="' + attrs[i].escaped + '"';
             }
-            results += (unary ? "/" : "") + ">";
+            results += (unary ? '/' : '') + '>';
         },
         end: function (tag) {
-            results += "</" + tag + ">";
+            results += '</' + tag + '>';
         },
         chars: function (text) {
             results += text;
         },
         comment: function (text) {
-            results += "<!--" + text + "-->";
+            results += '<!--' + text + '-->';
         }
     });
     return results;
 }
 function HTMLtoDOM(html, doc) {
     // There can be only one of these elements
-    var one = makeMap("html,head,body,title");
+    var one = makeMap('html,head,body,title');
     // Enforce a structure for the document
     var structure = {
-        link: "head",
-        base: "head"
+        link: 'head',
+        base: 'head'
     };
     if (!doc) {
-        if (typeof DOMDocument !== "undefined") {
+        if (typeof DOMDocument !== 'undefined') {
             doc = new DOMDocument();
         }
-        else if (typeof document !== "undefined" && document.implementation && document.implementation.createDocument) {
-            doc = document.implementation.createDocument("", "", null);
+        else if (typeof document !== 'undefined' && document.implementation && document.implementation.createDocument) {
+            doc = document.implementation.createDocument('', '', null);
         }
-        else if (typeof ActiveX !== "undefined") {
-            doc = new ActiveXObject("Msxml.DOMDocument");
+        else if (typeof ActiveX !== 'undefined') {
+            doc = new ActiveXObject('Msxml.DOMDocument');
         }
     } else {
         doc = doc.ownerDocument ||
@@ -248,11 +247,11 @@ function HTMLtoDOM(html, doc) {
     // need to pre-populate it with the HTML document structure
     if (!documentElement && doc.createElement)  {
         (function () {
-            var html = doc.createElement("html");
-            var head = doc.createElement("head");
-            head.appendChild(doc.createElement("title"));
+            var html = doc.createElement('html');
+            var head = doc.createElement('head');
+            head.appendChild(doc.createElement('title'));
             html.appendChild(head);
-            html.appendChild(doc.createElement("body"));
+            html.appendChild(doc.createElement('body'));
             doc.appendChild(html);
         }());
     }
@@ -277,7 +276,7 @@ function HTMLtoDOM(html, doc) {
             for (var attr in attrs) {
                 elem.setAttribute(attrs[attr].name, attrs[attr].value);
             }
-            if (structure[tagName] && typeof one[structure[tagName]] !== "boolean") {
+            if (structure[tagName] && typeof one[structure[tagName]] !== 'boolean') {
                 one[structure[tagName]].appendChild(elem);
             }
             else if (curParentNode && curParentNode.appendChild) {
