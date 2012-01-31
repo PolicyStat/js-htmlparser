@@ -161,6 +161,10 @@ var qunitTap = function qunitTap(qunitObject, printLikeFunction, options) {
             return;
         }
         qu.tap.puts((initialCount + 1) + '..' + qu.tap.count);
+        qu.tap.puts('Failed: ' + arg.failed);
+        qu.tap.puts('Passed: ' + arg.passed);
+        qu.tap.puts('Total: ' + arg.total);
+        qu.tap.puts('Time: ' + arg.runtime + ' ms');
     };
 
     var addListener = function (target, name, listener) {
