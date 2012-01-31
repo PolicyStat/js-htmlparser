@@ -2,11 +2,11 @@
 
 var util = require('util');
 var QUnit = require('./qunit.js').QUnit;
-var qunitTap = require('./qunit-tap.js');
+var qunitTap = require('./qunit-tap.js').qunitTap;
 var htmlparse = require('./htmlparser.js');
 var HTMLtoXML = htmlparse.HTMLtoXML;
 
-qunitTap.qunitTap(QUnit, util.puts, {
+qunitTap(QUnit, util.puts, {
     noPlan: true,
     showDetailsOnFailure: true
 });
@@ -16,6 +16,29 @@ QUnit.config.updateRate = 0;
 
 var test = QUnit.test;
 var equal = QUnit.equal;
+
+test('it should handle basic html', 4, function () {
+    equal(
+        HTMLtoXML('<span></span>'),
+        '<span></span>',
+        'empty tag'
+    );
+    equal(
+        HTMLtoXML('<span>inner text</span>'),
+        '<span>inner text</span>',
+        'tag with text'
+    );
+    equal(
+        HTMLtoXML('<span\'></span\'>'),
+        '<span></span>',
+        'Malformed'
+    );
+    equal(
+        HTMLtoXML('<span"></span">'),
+        '<span></span>',
+        'Malformed'
+    );
+});
 
 test('it should add missing closing tags', 2, function () {
     equal(
@@ -30,7 +53,7 @@ test('it should add missing closing tags', 2, function () {
     );
 });
 
-test('it should parse comments', 2, function () {
+test('it should parse comments', 3, function () {
     equal(
         HTMLtoXML('<style><!-- foo --></style>'),
         '<style><!-- foo --></style>',
@@ -41,8 +64,12 @@ test('it should parse comments', 2, function () {
         '<style><!-- \n --></style>',
         'embedded newlines within style tags'
     );
+    equal(
+        HTMLtoXML('foo <!-- bar --> zoo'),
+        'foo <!-- bar --> zoo',
+        'bare comment'
+    );
 });
-
 
 test('it should pass John Resigs tests', 5, function () {
     equal(
