@@ -13,108 +13,117 @@ qunitTap(QUnit, util.puts, {
 QUnit.init();
 QUnit.config.updateRate = 0;
 
-var test = QUnit.test;
 var equal = QUnit.equal;
 
-test('it should handle basic html', 7, function () {
+function test(name, handler) {
+    return QUnit.test(name, 1, handler);
+}
+
+test('it should handle an empty tag', function () {
     equal(
         HTMLtoXML('<span></span>'),
-        '<span></span>',
-        'empty tag'
+        '<span></span>'
     );
+});
+test('it should handle a tag with text', function () {
     equal(
         HTMLtoXML('<span>inner text</span>'),
-        '<span>inner text</span>',
-        'tag with text'
+        '<span>inner text</span>'
     );
+});
+test('it should handle a tag with a trailing single quote', function () {
     equal(
         HTMLtoXML('<span\'></span\'>'),
-        '<span></span>',
-        'tag has trailing single quote'
+        '<span></span>'
     );
+});
+test('it should handle a tag with a trailing double quote', function () {
     equal(
         HTMLtoXML('<span"></span">'),
-        '<span></span>',
-        'tag has trailing double quote'
+        '<span></span>'
     );
+});
+test('it should handle a case insensitve em tag', function () {
     equal(
         HTMLtoXML('<EM></EM>'),
-        '<em></em>',
-        'case insensitive em tag'
+        '<em></em>'
     );
+});
+test('it should handle a case insensitive style tag', function () {
     equal(
         HTMLtoXML('<STYLE></STYLE>'),
-        '<style></style>',
-        'case insensitive style tag'
+        '<style></style>'
     );
+});
+test('it should handle a case insenitive script tag', function () {
     equal(
         HTMLtoXML('<SCRIPT></SCRIPT>'),
-        '<script></script>',
-        'case insensitive script tag'
+        '<script></script>'
     );
 });
 
-test('it should add missing closing tags', 2, function () {
+test('it should add missing closing tags bold', function () {
     equal(
         HTMLtoXML('<b>foo'),
-        '<b>foo</b>',
-        'bold'
-    );
-    equal(
-        HTMLtoXML('<i>foo'),
-        '<i>foo</i>',
-        'italic'
+        '<b>foo</b>'
     );
 });
 
-test('it should parse comments', 4, function () {
+test('it should parse comments embedded within style tag', function () {
     equal(
         HTMLtoXML('<style><!-- foo --></style>'),
-        '<style><!-- foo --></style>',
-        'embedded within style tags'
+        '<style><!-- foo --></style>'
     );
+});
+test('it should parse comments embedded newline within style tag',
+     function () {
     equal(
         HTMLtoXML('<style><!-- \n --></style>'),
-        '<style><!-- \n --></style>',
-        'embedded newline within style tags'
+        '<style><!-- \n --></style>'
     );
+});
+test('it should parse comments embedded within style tag leading space',
+     function () {
     equal(
         HTMLtoXML('<style> <!-- \n --></style>'),
-        '<style> <!-- \n --></style>',
-        'embedded newline within style tags leading space'
+        '<style> <!-- \n --></style>'
     );
+});
+test('it should parse a bare comment', function () {
     equal(
         HTMLtoXML('foo <!-- bar --> zoo'),
-        'foo <!-- bar --> zoo',
-        'bare comment'
+        'foo <!-- bar --> zoo'
     );
 });
 
-test('it should pass John Resigs tests', 5, function () {
+test('it should pass John Resigs missing end tag nested', function () {
     equal(
         HTMLtoXML('<p><b>Hello'),
-        '<p><b>Hello</b></p>',
-        'Missing end tags nested'
+        '<p><b>Hello</b></p>'
     );
+});
+test('it should pass John Resigs empty elements', function () {
     equal(
         HTMLtoXML('<img src=test.jpg>'),
-        '<img src="test.jpg"/>',
-        'Empty Elements'
+        '<img src="test.jpg"/>'
     );
+});
+test('it should pass John Resigs block vs inline', function () {
     equal(
         HTMLtoXML('<b>Hello <p>John'),
-        '<b>Hello </b><p>John</p>',
-        'Block vs. Inline Elements'
+        '<b>Hello </b><p>John</p>'
     );
+});
+test('it should pass John Resigs self-closing tags', function () {
     equal(
         HTMLtoXML('<p>Hello<p>World'),
-        '<p>Hello</p><p>World</p>',
-        'Self-closing Elements'
+        '<p>Hello</p><p>World</p>'
     );
+});
+test('it should pass John Resigs attribute without values', function () {
     equal(
         HTMLtoXML('<input disabled>'),
-        '<input disabled="disabled"/>',
-        'Attributes Without Values'
+        '<input disabled="disabled"/>'
     );
 });
 
