@@ -1,4 +1,4 @@
-/*jslint newcap: false, node: true */
+/*jslint newcap: false, node: true, multistr: true */
 
 var util = require('util');
 var QUnit = require('./qunit.js').QUnit;
@@ -61,14 +61,12 @@ test('it should handle a case insenitive script tag', function () {
         '<script></script>'
     );
 });
-
 test('it should add missing closing tags bold', function () {
     equal(
         HTMLtoXML('<b>foo'),
         '<b>foo</b>'
     );
 });
-
 test('it should parse comments embedded within style tag', function () {
     equal(
         HTMLtoXML('<style><!-- foo --></style>'),
@@ -95,7 +93,6 @@ test('it should parse a bare comment', function () {
         'foo <!-- bar --> zoo'
     );
 });
-
 test('it should pass John Resigs missing end tag nested', function () {
     equal(
         HTMLtoXML('<p><b>Hello'),
@@ -105,7 +102,7 @@ test('it should pass John Resigs missing end tag nested', function () {
 test('it should pass John Resigs empty elements', function () {
     equal(
         HTMLtoXML('<img src=test.jpg>'),
-        '<img src="test.jpg"/>'
+        '<img src="test.jpg" />'
     );
 });
 test('it should pass John Resigs block vs inline', function () {
@@ -123,7 +120,80 @@ test('it should pass John Resigs self-closing tags', function () {
 test('it should pass John Resigs attribute without values', function () {
     equal(
         HTMLtoXML('<input disabled>'),
-        '<input disabled="disabled"/>'
+        '<input disabled="disabled" />'
+    );
+});
+test('it should parse end tags that have a < immediately after /', function () {
+    equal(
+        HTMLtoXML('<p>foo bar</<p>'),
+        '<p>foo bar</p>'
+    );
+});
+test('it should unwrap tags that do not make any sense', function () {
+    equal(
+        HTMLtoXML(
+            '<div><class="underline"><span>foo bar</span></class="underline"></div>'),
+        '<div><span>foo bar</span></div>'
+    );
+});
+test('it should convert a floating < to &lt;', function () {
+    equal(
+        HTMLtoXML('<p>40 < 60</p>'),
+        '<p>40 &lt; 60</p>'
+    );
+});
+test('it should convert a floating < to &lt;', function () {
+    equal(
+        HTMLtoXML('<br />foo < 30<br />'),
+        '<br />foo &lt; 30<br />'
+    );
+});
+test('it should convert a floating > to &gt;', function () {
+    equal(
+        HTMLtoXML('<p>60 > 40</p>'),
+        '<p>60 &gt; 40</p>'
+    );
+});
+test('it should convert a floating > to &lt;', function () {
+    equal(
+        HTMLtoXML('<br />foo > 30<br />'),
+        '<br />foo &gt; 30<br />'
+    );
+});
+test('it should convert a floating > and <', function () {
+    equal(
+        HTMLtoXML('<p>one < two > three</p>'),
+        '<p>one &lt; two &gt; three</p>'
+    );
+});
+
+test('it should handle normal html without issue', function () {
+    equal(
+        HTMLtoXML('<h2>one</h2><p>two</p><h2>three</h2>'),
+        '<h2>one</h2><p>two</p><h2>three</h2>'
+    );
+});
+
+test('it should strip xml specification', function () {
+    equal(
+        HTMLtoXML('<?xml:namespace prefix = o ns = "urn:schemas-microsoft-com:office:office" />\
+<p><?xml:namespace prefix = o ns = "urn:schemas-microsoft-com:office:office" /><p>foo</p>'),
+        '<p></p><p>foo</p>'
+    );
+});
+
+test('it should strip xml specification', function () {
+    equal(
+        HTMLtoXML('<?xml:namespace prefix = o ns = "urn:schemas-microsoft-com:office:office" ?>\
+<p><?xml:namespace prefix = o ns = "urn:schemas-microsoft-com:office:office" ?><p>foo</p>'),
+        '<p></p><p>foo</p>'
+    );
+});
+
+test('it should handle a period after the tag name', function () {
+    equal(
+        HTMLtoXML('<ok.>foo</ok.>'),
+        '<ok>foo</ok>'
     );
 });
 

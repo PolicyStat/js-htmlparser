@@ -35,8 +35,8 @@ function makeMap(str) {
 }
 
 // Regular Expressions for parsing tags and attributes
-var startTag = /^<([-A-Za-z0-9_]+)['"]?((?:\s+\w+(?:\s*=\s*(?:(?:"[^"]*")|(?:'[^']*')|[^>\s]+))?)*)\s*(\/?)>/,
-endTag = /^<\/([-A-Za-z0-9_]+)[^>]*>/,
+var startTag = /^<([-A-Za-z0-9_]+)['"\.]?((?:\s+\w+(?:\s*=\s*(?:(?:"[^"]*")|(?:'[^']*')|[^>\s]+))?)*)\s*(\/?)>/,
+endTag = /^<\/<?([-A-Za-z0-9_]+)[^>]*>/,
 attr = /([-A-Za-z0-9_]+)(?:\s*=\s*(?:(?:"((?:\\.|[^"])*)")|(?:'((?:\\.|[^'])*)')|([^>\s]+)))?/g;
 
 var comment = {
@@ -63,12 +63,24 @@ var fillAttrs = makeMap('checked,compact,declare,defer,disabled,ismap,multiple,n
 // Special Elements (can contain anything)
 var special = makeMap('script,style');
 
+var handler_noop = {
+    start: function () { },
+    end: function () { },
+    chars: function () { },
+    comment: function () { },
+    raw_tag: function () { return ''; }
+};
+
 function HTMLParser(html, handler) {
     var index, chars, match, stack = [], last = html;
     stack.last = function () {
         return this[this.length - 1];
     };
-
+    for (var k in handler_noop) {
+        if (typeof handler[k] !== 'function') {
+            handler[k] = handler_noop[k];
+        }
+    }
     function parseStartTag(tag, tagName, rest, unary) {
         tagName = tagName.toLowerCase();
 
@@ -87,23 +99,19 @@ function HTMLParser(html, handler) {
         if (!unary) {
             stack.push(tagName);
         }
-        if (handler.start) {
-            var attrs = [];
-            rest.replace(attr, function (match, name) {
-                var value = arguments[2] ? arguments[2] :
-                    arguments[3] ? arguments[3] :
-                    arguments[4] ? arguments[4] :
-                    fillAttrs[name] ? name : '';
-                attrs.push({
-                    name: name,
-                    value: value,
-                    escaped: value.replace(/(^|[^\\])"/g, '$1\\\"') //"
-                });
+        var attrs = [];
+        rest.replace(attr, function (match, name) {
+            var value = arguments[2] ? arguments[2] :
+                arguments[3] ? arguments[3] :
+                arguments[4] ? arguments[4] :
+                fillAttrs[name] ? name : '';
+            attrs.push({
+                name: name,
+                value: value,
+                escaped: value.replace(/(^|[^\\])"/g, '$1\\\"') //"
             });
-            if (handler.start) {
-                handler.start(tagName, attrs, unary);
-            }
-        }
+        });
+        handler.start(tagName, attrs, unary);
     }
 
     function parseEndTag(tag, tagName) {
@@ -123,9 +131,7 @@ function HTMLParser(html, handler) {
         if (pos >= 0) {
             // Close all the open elements, up the stack
             for (var i = stack.length - 1; i >= pos; i--) {
-                if (handler.end) {
-                    handler.end(stack[i]);
-                }
+                handler.end(stack[i]);
             }
             // Remove the open elements from the stack
             stack.length = pos;
@@ -134,33 +140,37 @@ function HTMLParser(html, handler) {
 
     function cdata_text_replace(all, text) {
         text = text.replace(/<!--(.*?)-->/g, '$1').replace(/<!\[CDATA\[(.*?)\]\]>/g, '$1');
-
-        if (handler.chars) {
-            handler.chars(text);
-        }
-
+        handler.chars(text);
         return '';
     }
+    // it should strip xml specification
+    html = html.replace(/<\?xml[^\/>]*[\/|\?]>/g, '');
+
+    // it should convert a floating < to &lt;
+    //html = html.replace(/(>.*[^>])<([^\/].*<\/)/, '$1&lt;$2');
+    //html = html.replace(/(\/>.*)<(.*<)/, '$1&lt;$2');
+
+    // it should convert a floating > to &gt;
+    //html = html.replace(/(>.*[^\-])>(.*<\/)/, '$1&gt;$2');
+    //html = html.replace(/(\/>.*)>(.*<)/, '$1&gt;$2');
+
 
     while (html) {
         index = html.indexOf('<');
         var text = index < 0 ? html : html.substring(0, index);
         html = index < 0 ? '' : html.substring(index);
-        if (handler.chars) {
-            handler.chars(text);
-        }
+        //handler.chars(text.replace('>', '&gt;'));
+        handler.chars(text);
 
         // Comment
         var comment_start = html.indexOf(comment.start);
         if (comment_start === 0) {
             index = html.indexOf(comment.end, comment_start);
             if (index >= 0) {
-                if (handler.comment) {
-                    var comment_text = html.substring(comment_start +
-                                                   comment.start.length,
-                                                   index);
-                    handler.comment(comment_text);
-                }
+                var comment_text = html.substring(comment_start +
+                                                  comment.start.length,
+                                                  index);
+                handler.comment(comment_text);
                 html = html.substring(index + comment.end.length);
             }
             // end tag
@@ -168,18 +178,36 @@ function HTMLParser(html, handler) {
 
         // Make sure we're not in a script or style element
         if (!stack.last() || !special[stack.last()]) {
+            var open_pos = html.indexOf('<');
             if (html.indexOf('</') === 0) {
                 match = html.match(endTag);
                 if (match) {
                     html = html.substring(match[0].length);
                     match[0].replace(endTag, parseEndTag);
+                } else {
+                    console.log('NO MATCH END');
                 }
-                // start tag
-            } else if (html.indexOf('<') === 0) {
+            // start tag
+            } else if (open_pos === 0) {
                 match = html.match(startTag);
                 if (match) {
                     html = html.substring(match[0].length);
                     match[0].replace(startTag, parseStartTag);
+                //} else {
+                    //var end_pos = html.indexOf('>', open_pos);
+                    //var open_pos_2 = html.indexOf('<', open_pos + 1);
+                    //var tag = html.substring(0, end_pos + 1);
+                    //var context = stack.last();
+                    //if (open_pos_2 < end_pos) {
+                        //html = '&lt;' + html.substring(open_pos + 1);
+                    //} else {
+                        //if (context === 'undefined' || inline[context]) {
+                            //console.log(tag, context);
+                        //} else {
+                            //html = handler.raw_tag(tag, context) +
+                                //html.substring(end_pos + 1);
+                        //}
+                    //}
                 }
             }
 
@@ -207,7 +235,7 @@ function HTMLtoXML(html) {
             for (var i = 0; i < attrs.length; i++) {
                 results += ' ' + attrs[i].name + '="' + attrs[i].escaped + '"';
             }
-            results += (unary ? '/' : '') + '>';
+            results += (unary ? ' /' : '') + '>';
         },
         end: function (tag) {
             results += '</' + tag + '>';
