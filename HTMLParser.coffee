@@ -87,6 +87,8 @@ regex =
 
 String::startswith = (str, pos)->
     this.indexOf(str, pos) == pos
+String::strip = ()->
+    return this.replace /^\s+|\s+$/g, ""
 
 class HTMLParseError
     constructor: (@message, @pos) ->
@@ -200,9 +202,66 @@ class HTMLParser extends ParserBase
 
     parse_starttag: (i) ->
         @__starttag_text = null
+        endpos = @check_for_whole_start_tag(i)
+        if endpos < 0
+            return endpos
+        @__starttag_text = @rawdata[i..endpos]
+
+        attrs = []
+        match = @rawdata[i+1..].match(regex.tagfind)
+        if not match
+            @error('unexpected call to parse_starttag')
+        k = match[0].length + match.index
+        @lasttag = tag = @rawdata[i+1..k].toLowerCase()
+
+        while k < endpos
+            m = @rawdata[k..].match(regex.attrfind)
+            if not m
+                console.log 'breaking'
+                break
+            @error('parsing attrs not implemented')
+
+        end = @rawdata[k+1..endpos-1]?.strip()
+        if end not in ['>', '/>']
+            pos = @getpos
+            lineno = pos[0]
+            offset = pos[1]
+            if '\n' in @__starttag_text
+                lineno += @__starttag_text.match(/\n/g)?.length
+                offset = @__starttag_text.length - @__starttag_text.lastIndexOf('\n')
+            else
+                offset += @__starttag_text.length
+            @error('junk characters in start tag')
+        console.log end
+        #if end == '/>'
+        #    @handle_startendtag(tag, attrs)
+        #else
+        @handle_starttag(tag, attrs)
+        if tag in @cdata_elem
+            @set_cdata_mode(tag)
+        return endpos
 
     check_for_whole_start_tag: (i) ->
-        @error('check_for_whole_start_tag not implemented')
+        match = @rawdata[i..].match(regex.locatestarttagend)
+        if match
+            j = match[0].length + match.index
+            next = @rawdata[j..j]
+            if next == '>'
+                return j + 1
+            if next == '/'
+                if @rawdata.startswith('/>', j)
+                    return j + 2
+                if @rawdata.startswith('/', j)
+                    return -1
+                @updatepos(i, j + 1)
+                @error('malformed empty start tag')
+            if next == ''
+                return -1
+            if next in 'abcdefghijklmnopqrstuvwxyz=/ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+                return -1
+            @updatepos(i, j)
+            @error('we shuold never get here')
+        @error('we shuold never get here')
 
     parse_endtag: (i) ->
         @error('parse_endtag not implemented')
@@ -246,6 +305,7 @@ class EventCollector extends HTMLParser
         @events = L
 
     handle_starttag: (tag, attrs) ->
+        console.log tag, attrs
         @append(['starttag', tag, attrs])
     handle_startendtag: (tag, attrs) ->
         @append(['starttagend', tag, attrs])
@@ -309,6 +369,16 @@ class HTMLParserTestCase extends HTMLParserTestBase
             ],
             [
                 ['data', 'foo']
+            ]
+        )
+        @run_check('simple tag check',
+            [
+                '<p>foo</p>'
+            ],
+            [
+                ['starttagopen', 'p', null],
+                ['data', 'foo'],
+                ['starttagend', 'p']
             ]
         )
 
