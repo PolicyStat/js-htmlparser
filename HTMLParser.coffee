@@ -99,8 +99,6 @@ class HTMLParseError
         result
 
 class ParserBase
-
-    constructor: ->
     reset: ->
         @lineno = 1
         @offset = 0
@@ -134,12 +132,13 @@ class ParserBase
         return match[0].length + match.index
 
 class HTMLParser extends ParserBase
-
     constructor: ->
+        super
         @__starttag_text = null
         @entitydefs = null
         @reset()
     reset: ->
+        super
         @rawdata = ''
         @lasttag = '???'
         @interesting = regex.interesting_normal
@@ -150,7 +149,7 @@ class HTMLParser extends ParserBase
     close: ->
         @goahead 1
     error: (message) ->
-        throw HTMLParseError(message, @getpos())
+        throw new HTMLParseError(message, @getpos())
     get_starttag_text: ->
         @__starttag_text
     set_cdata_mode: (elem) ->
@@ -191,7 +190,7 @@ class HTMLParser extends ParserBase
                 @error('goahead & not implemented')
             else
                 @error('interesting.search() lied')
-        if end and i < n and not @cdata_elem
+        if end and i < n and not @cdata_elem?
             @handle_data(@rawdata[i..n])
             i = @updatepos(i, n)
         @rawdata = @rawdata[i..]
@@ -200,7 +199,7 @@ class HTMLParser extends ParserBase
         @error('parse_pi not implemented')
 
     parse_starttag: (i) ->
-        @error('parse_starttag not implemented')
+        @__starttag_text = null
 
     check_for_whole_start_tag: (i) ->
         @error('check_for_whole_start_tag not implemented')
@@ -233,7 +232,7 @@ class EventCollector extends HTMLParser
     append: (item) ->
         # TODO SIMPLIFY
         @events.push(item)
-    get_events: -> 
+    get_events: ->
         L = []
         prevtype = null
         for event in @events
@@ -269,14 +268,30 @@ class EventCollector extends HTMLParser
 
 class HTMLParserTestBase
     constructor: ->
-    run_check: (source, expected_events, collector=EventCollector) ->
-        parser = collector()
+        @passed = 0
+        @total = 0
+    deepEquals: (arr1, arr2) ->
+        return false unless arr1.length is arr2.length
+        for i in [0...arr1.length]
+            if arr1[i] instanceof Array and arr2[i] instanceof Array
+                return false unless @deepEquals(arr1[i], arr2[i])
+            else
+                return false if arr1[i] isnt arr2[i]
+        true
+
+    run_check: (name, source, expected_events, collector=EventCollector) ->
+        parser = new collector
         for s in source
             parser.feed(s)
         parser.close()
         events = parser.get_events()
-        if events != expected_events
-            throw """
+        @total += 1
+        if @deepEquals(events, expected_events)
+            @passed += 1
+            console.log "Test '#{name}' passed"
+        else
+            console.log "Test '#{name}' failed"
+            console.log """
                   Received events did not match expected events
 
                   Expected:
@@ -288,11 +303,12 @@ class HTMLParserTestBase
 
 class HTMLParserTestCase extends HTMLParserTestBase
     test_simple_html: ->
-        @run_check(
-            '<p>foo</p>',
+        @run_check('data check',
             [
-                ['starttag', 'p', null],
-                ['data', 'foo</p>']
+                'foo'
+            ],
+            [
+                ['data', 'foo']
             ]
         )
 
@@ -301,5 +317,7 @@ module.exports =
     HTMLParseError: HTMLParseError
     HTMLParser: HTMLParser
     run_tests: ->
-        tester = new HTMLParserTestCase()
+        tester = new HTMLParserTestCase
         tester.test_simple_html()
+        console.log "\n#{tester.total} tests run"
+        console.log 'Passed:', tester.passed
