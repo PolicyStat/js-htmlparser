@@ -87,7 +87,7 @@ regex =
 
 String::startswith = (str, pos)->
     this.indexOf(str, pos) == pos
-String::strip = ()->
+String::strip = ->
     return this.replace /^\s+|\s+$/g, ""
 
 class HTMLParseError
@@ -125,7 +125,7 @@ class ParserBase
     # Internal -- parse comment, return length or -1 if not terminated
     parse_comment: (i, report=1) ->
         if @rawdata[i..i+4] != '<!--'
-            @error('unexpected call to parse_comment')
+            @error 'unexpected call to parse_comment'
         match = @rawdata[i+4..].match(regex.commentclose)
         return -1 if not match?
         if report
@@ -183,22 +183,22 @@ class HTMLParser extends ParserBase
                 else
                     break
                 if k < 0
-                    @error('EOF in middle of construct') if end
+                    @error 'EOF in middle of construct' if end
                     break
                 i = @updatepos(i, k)
             else if @rawdata.startswith('&#', i)
-                @error('goahead &# not implemented')
+                @error 'goahead &# not implemented'
             else if @rawdata.startswith('&', i)
-                @error('goahead & not implemented')
+                @error 'goahead & not implemented'
             else
-                @error('interesting.search() lied')
+                @error 'interesting.search() lied'
         if end and i < n and not @cdata_elem?
             @handle_data(@rawdata[i..n])
             i = @updatepos(i, n)
         @rawdata = @rawdata[i..]
 
     parse_pi: (i) ->
-        @error('parse_pi not implemented')
+        @error 'parse_pi not implemented'
 
     parse_starttag: (i) ->
         @__starttag_text = null
@@ -210,7 +210,7 @@ class HTMLParser extends ParserBase
         attrs = []
         match = @rawdata[i+1..].match(regex.tagfind)
         if not match
-            @error('unexpected call to parse_starttag')
+            @error 'unexpected call to parse_starttag'
         k = match[0].length + match.index
         @lasttag = tag = @rawdata[i+1..k].toLowerCase()
 
@@ -219,7 +219,7 @@ class HTMLParser extends ParserBase
             if not m
                 console.log 'breaking'
                 break
-            @error('parsing attrs not implemented')
+            @error 'parsing attrs not implemented'
 
         end = @rawdata[k+1..endpos-1]?.strip()
         if end not in ['>', '/>']
@@ -231,7 +231,7 @@ class HTMLParser extends ParserBase
                 offset = @__starttag_text.length - @__starttag_text.lastIndexOf('\n')
             else
                 offset += @__starttag_text.length
-            @error('junk characters in start tag')
+            @error 'junk characters in start tag'
         console.log end
         #if end == '/>'
         #    @handle_startendtag(tag, attrs)
@@ -254,17 +254,17 @@ class HTMLParser extends ParserBase
                 if @rawdata.startswith('/', j)
                     return -1
                 @updatepos(i, j + 1)
-                @error('malformed empty start tag')
+                @error 'malformed empty start tag'
             if next == ''
                 return -1
             if next in 'abcdefghijklmnopqrstuvwxyz=/ABCDEFGHIJKLMNOPQRSTUVWXYZ'
                 return -1
             @updatepos(i, j)
-            @error('we shuold never get here')
-        @error('we shuold never get here')
+            @error 'we shuold never get here'
+        @error 'we shuold never get here'
 
     parse_endtag: (i) ->
-        @error('parse_endtag not implemented')
+        @error 'parse_endtag not implemented'
 
     handle_startendtag: (tag, attrs) ->
         @handle_starttag(tag, attrs)
@@ -279,17 +279,16 @@ class HTMLParser extends ParserBase
     handle_decl: (decl) ->
     handle_pi: (data) ->
     unknown_decl: (data) ->
-        @error("unknown declaration #{data}")
+        @error "unknown declaration #{data}"
 
     unescape: (s) ->
-        @error('unescape not implemented')
+        @error 'unescape not implemented'
 
 class EventCollector extends HTMLParser
     constructor: ->
         @events = []
         super
     append: (item) ->
-        # TODO SIMPLIFY
         @events.push(item)
     get_events: ->
         L = []
@@ -306,25 +305,25 @@ class EventCollector extends HTMLParser
 
     handle_starttag: (tag, attrs) ->
         console.log tag, attrs
-        @append(['starttag', tag, attrs])
+        @append ['starttag', tag, attrs]
     handle_startendtag: (tag, attrs) ->
-        @append(['starttagend', tag, attrs])
+        @append ['starttagend', tag, attrs]
     handle_endtag: (tag) ->
-        @append(['endtag', tag])
+        @append ['endtag', tag]
     handle_charref: (name) ->
-        @append(['charref', name])
+        @append ['charref', name]
     handle_entityref: (name) ->
-        @append(['entityref', name])
+        @append ['entityref', name]
     handle_data: (data) ->
-        @append(['data', data])
+        @append ['data', data]
     handle_comment: (data) ->
-        @append(['comment', data])
+        @append ['comment', data]
     handle_decl: (decl) ->
-        @append(['decl', data])
+        @append ['decl', data]
     handle_pi: (data) ->
-        @append(['pi', data])
+        @append ['pi', data]
     unknown_decl: (data) ->
-        @append(['unknown dec', data])
+        @append ['unknown dec', data]
 
 class HTMLParserTestBase
     constructor: ->
