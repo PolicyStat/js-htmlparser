@@ -2,6 +2,7 @@ util = require('util')
 QUnit = require('./qunit.js').QUnit
 qunitTap = require('./qunit-tap.js').qunitTap
 HTMLParser = require('./HTMLParser.coffee')
+regex = HTMLParser.regex
 
 class EventCollector extends HTMLParser.HTMLParser
     constructor: ->
@@ -118,29 +119,49 @@ test 'RegExp::search', ->
     equal result3, null
 
 assert_ok 'regex.interesting_normal',
-    -> HTMLParser.regex.interesting_normal.test '&'
+    -> regex.interesting_normal.test '&'
 assert_ok 'regex.interesting_normal',
-    -> HTMLParser.regex.interesting_normal.test '<'
+    -> regex.interesting_normal.test '<'
 assert_ok 'regex.incomplete',
-    -> HTMLParser.regex.incomplete.test '&a#'
+    -> regex.incomplete.test '&a#'
 assert_ok 'regex.incomplete',
-    -> HTMLParser.regex.incomplete.test '&A#'
+    -> regex.incomplete.test '&A#'
 assert_ok 'regex.entityref',
-    -> HTMLParser.regex.entityref.test '&a-0Aaz#'
+    -> regex.entityref.test '&a-0Aaz#'
 assert_ok 'regex.charref',
-    -> HTMLParser.regex.charref.test '&#123~'
+    -> regex.charref.test '&#123~'
 assert_ok 'regex.starttagopen',
-    -> HTMLParser.regex.starttagopen.test '<a'
+    -> regex.starttagopen.test '<a'
 assert_ok 'regex.starttagopen',
-    -> HTMLParser.regex.starttagopen.test '<A'
+    -> regex.starttagopen.test '<A'
 assert_ok 'regex.piclose',
-    -> HTMLParser.regex.piclose.test 'foo>'
+    -> regex.piclose.test 'foo>'
+assert_ok 'regex.tagfind',
+    -> regex.tagfind.test 'A-dD3:_-fF4:_'
 assert_ok 'regex.endendtag',
-    -> HTMLParser.regex.endendtag.test 'foo>'
+    -> regex.endendtag.test 'foo>'
+assert_ok 'regex.endtagfind',
+    -> regex.endtagfind.test '</  A-dD3:_-fF4:_   >'
+assert_ok 'regex.endtagfind',
+    -> regex.endtagfind.test '</A-dD3:_-fF4:_>'
 assert_ok 'regex.commentclose',
-    -> HTMLParser.regex.commentclose.test '  -->'
+    -> regex.commentclose.test '-->'
 assert_ok 'regex.commentclose',
-    -> HTMLParser.regex.commentclose.test '  --  >'
+    -> regex.commentclose.test '  -->'
+assert_ok 'regex.commentclose',
+    -> regex.commentclose.test '  --  >'
+assert_ok 'regex.attrfind',
+    -> regex.attrfind.test ' foo="bar" '
+assert_ok 'regex.attrfind',
+    -> regex.attrfind.test " foo='bar' "
+assert_ok 'regex.attrfind',
+    -> regex.attrfind.test " foo=bar "
+assert_ok 'regex.locatestarttagend',
+    -> regex.locatestarttagend.test "<a foo=bar  "
+assert_ok 'regex.locatestarttagend',
+    -> regex.locatestarttagend.test '<a foo="bar"  '
+assert_ok 'regex.locatestarttagend',
+    -> regex.locatestarttagend.test "<a foo='bar'  "
 
 assert_deep 'data check',
     -> get_events(['foo'])
