@@ -85,10 +85,19 @@ regex =
     ///
     commentclose: /\-\-\s*>/
 
-String::startswith = (str, pos)->
+String::startswith = (str, pos=0) ->
     this.indexOf(str, pos) == pos
 String::strip = ->
     return this.replace /^\s+|\s+$/g, ""
+String::count = (pattern) ->
+    result = this.match(pattern)
+    return if result? then result.length else 0
+RegExp::search = (str) ->
+    result = this.exec(str)
+    return null if not result?
+    match: result[0]
+    start: result.index
+    end: result.index + result[0].length
 
 class HTMLParseError
     constructor: (@message, @pos) ->
@@ -113,10 +122,11 @@ class ParserBase
     # function should be exactly the entire input.
     updatepos: (i, j) ->
         return j if i >= j
-        nlines = @rawdata[i..j].match(/\n/g)?.length
-        if nlines
+        slice = @rawdata[i..j]
+        nlines = slice.count(/\n/g)
+        if nlines > 0
+            pos = slice.lastIndexOf('\n')
             @lineno += nlines
-            pos = @rawdata[i..j].lastIndexOf('\n')
             @offset = j - (pos + 1)
         else
             @offset += (j - i)
@@ -126,12 +136,10 @@ class ParserBase
     parse_comment: (i, report=1) ->
         if @rawdata[i..i+4] != '<!--'
             @error 'unexpected call to parse_comment'
-        match = @rawdata[i+4..].match(regex.commentclose)
+        match = regex.commentclose.search(@rawdata[i+4..])
         return -1 if not match?
-        if report
-            j = match.index
-            @handle_comment(@rawdata[i+4..j])
-        return match[0].length + match.index
+        @handle_comment @rawdata[i+4..match.start] if report
+        return match.end
 
 class HTMLParser extends ParserBase
     constructor: ->
@@ -381,12 +389,16 @@ class HTMLParserTestCase extends HTMLParserTestBase
             ]
         )
 
+
+run_tests = ->
+    tester = new HTMLParserTestCase
+    tester.test_simple_html()
+    console.log "\n#{tester.total} tests run"
+    console.log 'Passed:', tester.passed
+
 module.exports =
     regex: regex
     HTMLParseError: HTMLParseError
     HTMLParser: HTMLParser
     run_tests: ->
-        tester = new HTMLParserTestCase
-        tester.test_simple_html()
-        console.log "\n#{tester.total} tests run"
-        console.log 'Passed:', tester.passed
+        run_tests()
