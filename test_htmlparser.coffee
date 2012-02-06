@@ -37,7 +37,7 @@ class EventCollector extends HTMLParser.HTMLParser
         @append ['data', data]
     handle_comment: (data) ->
         @append ['comment', data]
-    handle_decl: (decl) ->
+    handle_decl: (data) ->
         @append ['decl', data]
     handle_pi: (data) ->
         @append ['pi', data]
@@ -86,9 +86,9 @@ assert_deep = (name, actual, expected) ->
     test(name, ->
         actual = actual() if typeof actual is 'function'
         expected = expected() if typeof expected is 'function'
-        console.log actual
-        console.log expected
-        equal(deep_equal(actual, expected), true)
+        QUnit.push(deep_equal(actual, expected),
+            util.inspect(actual),
+            util.inspect(expected))
     )
 
 assert_raises = (name, handler) ->
@@ -179,12 +179,15 @@ assert_ok 'regex.attrfind',
     -> regex.attrfind.test " foo='bar' "
 assert_ok 'regex.attrfind',
     -> regex.attrfind.test " foo=bar "
-assert_ok 'regex.locatestarttagend',
-    -> regex.locatestarttagend.test "<a foo=bar  "
-assert_ok 'regex.locatestarttagend',
-    -> regex.locatestarttagend.test '<a foo="bar"  '
-assert_ok 'regex.locatestarttagend',
-    -> regex.locatestarttagend.test "<a foo='bar'  "
+assert_equal 'regex.locatestarttagend',
+    -> regex.locatestarttagend.exec("<a foo='bar'>")?[0]
+    "<a foo='bar'"
+assert_equal 'regex.locatestarttagend',
+    -> regex.locatestarttagend.exec('<a foo="bar">')?[0]
+    '<a foo="bar"'
+assert_equal 'regex.locatestarttagend',
+    -> regex.locatestarttagend.exec('<a foo=bar>')?[0]
+    '<a foo=bar'
 
 assert_deep 'data check',
     -> get_events(['foo'])
@@ -214,6 +217,32 @@ assert_deep 'bad nesting',
         ['endtag', 'b']
     ]
 
+assert_deep 'simple attribute check',
+    -> get_events(['<p class="foo">bar</p>'])
+    [
+        ['starttag', 'p', [['class', 'foo']] ],
+        ['data', 'bar'],
+        ['endtag', 'p']
+    ]
+
+assert_deep 'multiple attribute check',
+    -> get_events(['<p class="foo" style="moo">bar</p>'])
+    [
+        ['starttag', 'p', [
+            ['class', 'foo'], ['style', 'moo']
+        ]],
+        ['data', 'bar'],
+        ['endtag', 'p']
+    ]
+
+assert_deep 'self-closing tag with attributes',
+    -> get_events(['<p class="foo" style="moo"/>'])
+    [
+        ['starttagend', 'p', [
+            ['class', 'foo'], ['style', 'moo']
+        ]]
+    ]
+
 assert_deep 'bare ampersands',
     -> get_events(['this text & contains & ampersands &'])
     [['data', 'this text & contains & ampersands &']]
@@ -225,5 +254,52 @@ assert_deep 'bare pointy/angle brackets',
 assert_raises 'parse error on </>',
     -> get_events(['</>'])
 
+assert_deep 'declaration',
+    -> get_events(['<!DOCTYPE html>'])
+    [['decl', 'DOCTYPE html']]
+
+assert_deep 'empty declaration',
+    -> get_events(['<!>'])
+    []
+
+assert_deep 'simple entity ref',
+    -> get_events(['<p>&entity;&#32;</p>'])
+    [
+        ['starttag', 'p', []],
+        ['entityref', 'entity'],
+        ['charref', '32'],
+        ['endtag', 'p']
+    ]
+
+assert_deep 'simple html',
+    -> get_events(["""
+                    <!DOCTYPE html PUBLIC 'foo'>
+                    <HTML>&entity;&#32;
+                    <!--comment1a
+                    -></foo><bar>&lt;<?pi?></foo<bar
+                    comment1b-->
+                    <Img sRc='Bar' isMAP>sample
+                    text
+                    &#x201C;
+                    <!--comment2a-- --comment2b--><!>
+                    </Html>
+                    """])
+    [
+        ['decl', 'DOCTYPE html PUBLIC \'foo\''],
+        ['data', '\n'],
+        ['starttag', 'html', []],
+        ['entityref', 'entity'],
+        ['charref', '32'],
+        ['data', '\n'],
+        ['comment', 'comment1a\n-></foo><bar>&lt;<?pi?></foo<bar\ncomment1b'],
+        ['data', '\n'],
+        ['starttag', 'img', [['src', 'Bar'], ['ismap', null]]],
+        ['data', 'sample\ntext\n'],
+        ['charref', 'x201C'],
+        ['data', '\n'],
+        ['comment', 'comment2a-- --comment2b'],
+        ['data', '\n'],
+        ['endtag', 'html']
+    ]
 
 QUnit.start()

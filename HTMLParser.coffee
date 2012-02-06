@@ -9,6 +9,8 @@ regex =
         )
         [^a-zA-Z0-9]
     ///
+    declname: /[a-zA-Z][-_.a-zA-Z0-9]*\s*/
+    declstringlit: /('[^']*'|"[^"]*")\s*/
     charref: /&#(?:[0-9]+|[xX][0-9a-fA-F]+)[^0-9a-fA-F]/
     starttagopen: /<[a-zA-Z]/
     piclose: />/
@@ -46,7 +48,7 @@ regex =
         [a-zA-Z]
         [-.a-zA-Z0-9:_]*        # tag name
         (?:
-            \s+                 # whitespace before attribute name
+            \s*                 # whitespace before attribute name
             ['"\s]
             (?:
                 [^\s/>]
@@ -192,7 +194,7 @@ class HTMLParser extends ParserBase
             i = @updatepos(i, j)
             break if i == n
             if @rawdata.startswith('<', i)
-                if regex.starttagopen.search(@rawdata, i)?
+                if regex.starttagopen.match(@rawdata, i)?
                     k = @parse_starttag i
                 else if @rawdata.startswith('</', i)
                     k = @parse_endtag i
@@ -212,7 +214,20 @@ class HTMLParser extends ParserBase
                     break
                 i = @updatepos(i, k)
             else if @rawdata.startswith('&#', i)
-                @error 'goahead &# not implemented'
+                match = regex.charref.match @rawdata, i
+                if match?
+                    name = match.match[2...-1]
+                    @handle_charref name
+                    k = match.end
+                    if not @rawdata.startswith(';', k-1)
+                        k = k - 1
+                    i = @updatepos i, k
+                    continue
+                else
+                    if ';'.in @rawdata[i..] # bail by consuming &#
+                        @handle_data @rawdata[0...2]
+                        i = @updatepos i, 2
+                    break
             else if @rawdata.startswith('&', i)
                 match = regex.entityref.match @rawdata, i
                 if match?
@@ -245,10 +260,73 @@ class HTMLParser extends ParserBase
         @rawdata = @rawdata[i..]
 
     parse_declaration: (i) ->
-        @error 'parse_declaration not implemented'
+        j = i + 2
+        if @rawdata[i...j] != '<!'
+            @error 'unexpected call to parse_declaration'
+        if @rawdata[j..j] == '>'
+            # the empty comment <!>
+            return j + 1
+        if @rawdata[j..j] in ['-', '']
+            # Start of comment followed by buffer boundary,
+            # or just a buffer boundary.
+            return -1
+        if @rawdata[j...j+2] == '--'
+            # Locate --.*-- as the body of the comment
+            return @parse_comment i
+        else if @rawdata[j] == '['
+            return @parse_marked_section i
+        else
+            [decltype, j] = @_scan_name j, i
+        if j < 0
+            return j
+        if decltype == 'doctype'
+            @_decl_otherchars = ''
+        while j < @rawdata.length
+            c = @rawdata[j]
+            if c == '>'
+                # end of declaration syntax
+                data = @rawdata[i+2...j]
+                if decltype == 'doctype'
+                    @handle_decl data
+                else
+                    # According to the HTML5 specs sections "8.2.4.44 Bogus
+                    # comment state" and "8.2.4.45 Markup declaration open
+                    # state", a comment token should be emitted.
+                    # Calling unknown_decl provides more flexibility though.
+                    @unknown_decl data
+                return j + 1
+            if c in ['"', "'"]
+                m = regex.declstringlit.match @rawdata, j
+                if not m?
+                    return -1 # incomplete
+                j = m.end
+            else if c.in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                [name, j] = @_scan_name j, i
+            else if c.in @_decl_otherchars
+                j = j + 1
+            else
+                @error 'unexpected character "#{c}" in declaration'
+            if j < 0
+                return j
+        return -1
+
+    _scan_name: (i, declstartpos) ->
+        if i == @rawdata.length
+            return [null, -1]
+        m = regex.declname.match @rawdata, i
+        if m?
+            s = m.match
+            name = s.strip()
+            if i + s.length == @rawdata.length
+                return [null, -1]
+            return [name.toLowerCase(), m.end]
+        else
+            @updatepos declstartpos, i
+            @error 'expected name token'
 
     parse_pi: (i) ->
         @error 'parse_pi not implemented'
+
 
     parse_starttag: (i) ->
         @__starttag_text = null
@@ -265,9 +343,18 @@ class HTMLParser extends ParserBase
         @lasttag = tag = @rawdata[i+1...k].toLowerCase()
 
         while k < endpos
-            m = regex.attrfind.search @rawdata, k
+            m = regex.attrfind.match @rawdata, k
             if not m
                 break
+            [attrname, rest, attrvalue] = m.group[1..3]
+            if not rest?
+                attrvalue = null
+            else if (attrvalue[...1] == "'" == attrvalue[-1..]) or
+                    (attrvalue[...1] == '"' == attrvalue[-1..])
+                attrvalue = attrvalue[1...-1]
+            #if attrvalue?
+                #attrvalue = @unescape attrvalue
+            attrs.push [attrname.toLowerCase(), attrvalue]
             k = m.end
 
         end = @rawdata[k...endpos]?.strip()
@@ -288,10 +375,10 @@ class HTMLParser extends ParserBase
         return endpos
 
     check_for_whole_start_tag: (i) ->
-        match = regex.locatestarttagend.search @rawdata, i
-        if match
+        match = regex.locatestarttagend.match @rawdata, i
+        if match?
             j = match.end
-            next = @rawdata[j]
+            next = @rawdata[j..j]
             if next == '>'
                 return j + 1
             if next == '/'
@@ -306,7 +393,7 @@ class HTMLParser extends ParserBase
             if next.in 'abcdefghijklmnopqrstuvwxyz=/ABCDEFGHIJKLMNOPQRSTUVWXYZ'
                 return -1
             @updatepos(i, j)
-            @error 'we should never get here'
+            @error 'malformed start tag'
         @error 'we should never get here'
 
     parse_endtag: (i) ->
