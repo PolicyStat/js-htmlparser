@@ -4,4 +4,4 @@ js-htmlparser
 Running the tests
 ==
 
-    $ node htmlparser-test.js
+    $ coffee test_htmlparser.coffee
