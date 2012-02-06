@@ -24,7 +24,6 @@ class EventCollector extends HTMLParser.HTMLParser
         @events = L
 
     handle_starttag: (tag, attrs) ->
-        console.log tag, attrs
         @append ['starttag', tag, attrs]
     handle_startendtag: (tag, attrs) ->
         @append ['starttagend', tag, attrs]
@@ -86,7 +85,7 @@ assert_deep = (name, actual, expected) ->
     test(name, ->
         actual = actual() if typeof actual is 'function'
         expected = expected() if typeof expected is 'function'
-        ok deep_equal actual, expected
+        equal(deep_equal(actual, expected), true)
     )
 
 assert_deep 'assert_deep', [], []
@@ -101,6 +100,8 @@ assert_equal 'string::strip', 'foo bar'.strip(), 'foo bar'
 assert_equal 'string::count', 'aaabbbccc'.count(/a/g), 3
 assert_equal 'string::count', 'aaabbbccc'.count(/[a|b]/g), 6
 assert_equal 'string::count', 'aaabbbccc'.count(/z/g), 0
+assert_ok 'string::in', 'foo'.in('foobar')
+assert_equal 'string::in', 'foo'.in('bar'), false
 assert_equal 'RegExp::search',
     -> /xyz/g.search('abcdefg')
     null
@@ -117,6 +118,20 @@ test 'RegExp::search', ->
     equal result2.start, 7
     equal result2.end, 10
     equal result3, null
+    re = /def/g
+    result4 = re.search str, 6
+    equal result4.match, 'def'
+    equal result4.start, 7
+    equal result4.end, 10
+
+test 'RegExp::match', ->
+    re = /def/
+    str = 'abcdefzdef'
+    result1 = re.match str
+    re = /def/
+    result2 = re.match str, 3
+    equal result1, null
+    equal result2.match, 'def'
 
 assert_ok 'regex.interesting_normal',
     -> regex.interesting_normal.test '&'
@@ -169,8 +184,8 @@ assert_deep 'data check',
 assert_deep 'simple tag check',
     -> get_events(['<p>foo</p>'])
     [
-        ['starttagopen', 'p', null],
+        ['starttag', 'p', [] ],
         ['data', 'foo'],
-        ['starttagend', 'p']
+        ['endtag', 'p']
     ]
 QUnit.start()
