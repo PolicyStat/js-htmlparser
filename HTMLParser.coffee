@@ -12,7 +12,6 @@ regex =
     charref: /&#(?:[0-9]+|[xX][0-9a-fA-F]+)[^0-9a-fA-F]/
     starttagopen: /<[a-zA-Z]/
     piclose: />/
-    commentclose: /\-\-\s*>/
     tagfind: /[a-zA-Z][-.a-zA-Z0-9:_]*/
     # Javascript does not support positive lookbehind assertion, so we have
     # attempted to mimick it here
