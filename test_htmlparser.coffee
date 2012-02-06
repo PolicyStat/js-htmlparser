@@ -44,6 +44,13 @@ class EventCollector extends HTMLParser.HTMLParser
     unknown_decl: (data) ->
         @append ['unknown dec', data]
 
+get_events = (data) ->
+    parser = new EventCollector
+    for s in data
+        parser.feed(s)
+    parser.close()
+    parser.get_events()
+
 qunitTap(QUnit, util.puts, {
     noPlan: true
 })
@@ -63,36 +70,39 @@ deep_equal = (arr1, arr2) ->
         else
             return false if arr1[i] isnt arr2[i]
     true
-
 assert_ok = (name, actual) ->
     test(name, ->
+        actual = actual() if typeof actual is 'function'
         ok actual
     )
 assert_equal = (name, actual, expected) ->
     test(name, ->
+        actual = actual() if typeof actual is 'function'
+        expected = expected() if typeof expected is 'function'
         equal actual, expected
     )
 assert_deep = (name, actual, expected) ->
     test(name, ->
+        actual = actual() if typeof actual is 'function'
+        expected = expected() if typeof expected is 'function'
         ok deep_equal actual, expected
     )
 
-get_events = (data) ->
-    parser = new EventCollector
-    for s in data
-        parser.feed(s)
-    parser.close()
-    parser.get_events()
+assert_deep 'assert_deep', [], []
+assert_deep 'assert_deep', ['foo'], ['foo']
+assert_deep 'assert_deep', [['foo', 'bar']], [['foo', 'bar']]
 
-assert_ok 'string::startswith', 'foobar'.startswith('foo')
-assert_ok 'string::startswith', 'foobar'.startswith('oob', 1)
+assert_ok 'string::startswith', -> 'foobar'.startswith('foo')
+assert_ok 'string::startswith', -> 'foobar'.startswith('oob', 1)
 assert_equal 'string::startswith', 'foobar'.startswith('bar'), false
 assert_equal 'string::strip', '  foo bar  '.strip(), 'foo bar'
 assert_equal 'string::strip', 'foo bar'.strip(), 'foo bar'
 assert_equal 'string::count', 'aaabbbccc'.count(/a/g), 3
 assert_equal 'string::count', 'aaabbbccc'.count(/[a|b]/g), 6
 assert_equal 'string::count', 'aaabbbccc'.count(/z/g), 0
-assert_equal 'RegExp::search', /xyz/g.search('abcdefg'), null
+assert_equal 'RegExp::search',
+    -> /xyz/g.search('abcdefg')
+    null
 test 'RegExp::search', ->
     re = /def/g
     str = 'abcdefzdef'
@@ -106,14 +116,40 @@ test 'RegExp::search', ->
     equal result2.start, 7
     equal result2.end, 10
     equal result3, null
-assert_deep 'assert_deep', [], []
-assert_deep 'assert_deep', ['foo'], ['foo']
-assert_deep 'assert_deep', [['foo', 'bar']], [['foo', 'bar']]
-assert_deep 'data check', get_events(['foo']), [['data', 'foo']]
-#assert_deep 'simple tag check', get_events(['<p>foo</p>']), [
-    #['starttagopen', 'p', null],
-    #['data', 'foo'],
-    #['starttagend', 'p']
-#]
 
+assert_ok 'regex.interesting_normal',
+    -> HTMLParser.regex.interesting_normal.test '&'
+assert_ok 'regex.interesting_normal',
+    -> HTMLParser.regex.interesting_normal.test '<'
+assert_ok 'regex.incomplete',
+    -> HTMLParser.regex.incomplete.test '&a#'
+assert_ok 'regex.incomplete',
+    -> HTMLParser.regex.incomplete.test '&A#'
+assert_ok 'regex.entityref',
+    -> HTMLParser.regex.entityref.test '&a-0Aaz#'
+assert_ok 'regex.charref',
+    -> HTMLParser.regex.charref.test '&#123~'
+assert_ok 'regex.starttagopen',
+    -> HTMLParser.regex.starttagopen.test '<a'
+assert_ok 'regex.starttagopen',
+    -> HTMLParser.regex.starttagopen.test '<A'
+assert_ok 'regex.piclose',
+    -> HTMLParser.regex.piclose.test 'foo>'
+assert_ok 'regex.endendtag',
+    -> HTMLParser.regex.endendtag.test 'foo>'
+assert_ok 'regex.commentclose',
+    -> HTMLParser.regex.commentclose.test '  -->'
+assert_ok 'regex.commentclose',
+    -> HTMLParser.regex.commentclose.test '  --  >'
+
+assert_deep 'data check',
+    -> get_events(['foo'])
+    [['data', 'foo']]
+assert_deep 'simple tag check',
+    -> get_events(['<p>foo</p>'])
+    [
+        ['starttagopen', 'p', null],
+        ['data', 'foo'],
+        ['starttagend', 'p']
+    ]
 QUnit.start()
