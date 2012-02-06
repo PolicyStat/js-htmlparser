@@ -61,6 +61,7 @@ QUnit.config.updateRate = 0
 test = QUnit.test
 ok = QUnit.ok
 equal = QUnit.equal
+raises = QUnit.raises
 
 deep_equal = (arr1, arr2) ->
     return false unless arr1.length is arr2.length
@@ -85,7 +86,14 @@ assert_deep = (name, actual, expected) ->
     test(name, ->
         actual = actual() if typeof actual is 'function'
         expected = expected() if typeof expected is 'function'
+        console.log actual
+        console.log expected
         equal(deep_equal(actual, expected), true)
+    )
+
+assert_raises = (name, handler) ->
+    test(name, ->
+        raises handler
     )
 
 assert_deep 'assert_deep', [], []
@@ -181,6 +189,12 @@ assert_ok 'regex.locatestarttagend',
 assert_deep 'data check',
     -> get_events(['foo'])
     [['data', 'foo']]
+assert_deep 'comment check',
+    -> get_events(['<!-- foo -->'])
+    [['comment', ' foo ']]
+assert_deep 'simple self-closing tag check',
+    -> get_events(['<p/>'])
+    [['starttagend', 'p', []]]
 assert_deep 'simple tag check',
     -> get_events(['<p>foo</p>'])
     [
@@ -188,4 +202,28 @@ assert_deep 'simple tag check',
         ['data', 'foo'],
         ['endtag', 'p']
     ]
+# Strangely, this *is* supposed to test that overlapping
+# elements are allowed.  HTMLParser is more geared toward
+# lexing the input that parsing the structure.
+assert_deep 'bad nesting',
+    -> get_events(['<a><b></a></b>'])
+    [
+        ['starttag', 'a', []],
+        ['starttag', 'b', []],
+        ['endtag', 'a'],
+        ['endtag', 'b']
+    ]
+
+assert_deep 'bare ampersands',
+    -> get_events(['this text & contains & ampersands &'])
+    [['data', 'this text & contains & ampersands &']]
+
+assert_deep 'bare pointy/angle brackets',
+    -> get_events(['this < text > contains < bare>pointy< brackets'])
+    [['data', 'this < text > contains < bare>pointy< brackets']]
+
+assert_raises 'parse error on </>',
+    -> get_events(['</>'])
+
+
 QUnit.start()

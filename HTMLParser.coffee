@@ -214,7 +214,29 @@ class HTMLParser extends ParserBase
             else if @rawdata.startswith('&#', i)
                 @error 'goahead &# not implemented'
             else if @rawdata.startswith('&', i)
-                @error 'goahead & not implemented'
+                match = regex.entityref.match @rawdata, i
+                if match?
+                    name = match.group[1]
+                    @handle_entityref name
+                    k = match.end
+                    if not @rawdata.startswith(';', k-1)
+                        k = k - 1
+                    i = @updatepos i, k
+                    continue
+                match = regex.incomplete.match @rawdata, i
+                if match?
+                    # match.group() will contain at least 2 chars
+                    if end and match.match == @rawdata[i..]
+                        @error 'EOF in middle of entity or charref'
+                    # incomplete
+                    break
+                else if (i + 1) < n
+                    # not the end of the buffer, and can't be confused
+                    # with some other construct
+                    @handle_data '&'
+                    i = @updatepos i, i+1
+                else
+                    break
             else
                 @error 'interesting.search() lied'
         if end and i < n and not @cdata_elem?
