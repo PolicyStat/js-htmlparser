@@ -114,9 +114,13 @@ assert_equal 'string::in', 'foo'.in('bar'), false
 assert_equal 'string::unescape_htmlentities',
     '&#bad;'.unescape_htmlentities(), '&#bad;'
 assert_equal 'string::unescape_htmlentities',
+    '&apos;'.unescape_htmlentities(), "'"
+assert_equal 'string::unescape_htmlentities',
     '&gt;'.unescape_htmlentities(), '>'
 assert_equal 'string::unescape_htmlentities',
     '&#0038;'.unescape_htmlentities(), '&'
+assert_equal 'string::unescape_htmlentities',
+    '&#bad;&gt;&#0038;'.unescape_htmlentities(), '&#bad;>&'
 
 assert_equal 'RegExp::search',
     -> /xyz/g.search('abcdefg')
@@ -277,6 +281,12 @@ assert_deep 'simple entity ref',
         ['entityref', 'entity'],
         ['charref', '32'],
         ['endtag', 'p']
+    ]
+
+assert_deep 'attribute entity replacement',
+    -> get_events(["<a b='&amp;&gt;&lt;&quot;&apos;'>"])
+    [
+        ["starttag", "a", [["b", "&><\"'"]]]
     ]
 
 assert_deep 'simple html',

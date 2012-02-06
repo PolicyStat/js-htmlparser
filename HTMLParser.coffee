@@ -87,7 +87,7 @@ regex =
     commentclose: /\-\-\s*>/
 
 htmlentitydefs =
-    'apos': "'",
+    'apos': 39,
     'AElig': 198, 'Aacute': 193, 'Acirc': 194, 'Agrave': 192, 'Alpha': 913, 'Aring': 197, 'Atilde': 195, 'Auml': 196, 'Beta': 914, 'Ccedil': 199, 'Chi': 935, 'Dagger': 8225, 'Delta': 916, 'ETH': 208, 'Eacute': 201, 'Ecirc': 202, 'Egrave': 200, 'Epsilon': 917, 'Eta': 919, 'Euml': 203, 'Gamma': 915, 'Iacute': 205, 'Icirc': 206, 'Igrave': 204, 'Iota': 921, 'Iuml': 207,
     'Kappa': 922, 'Lambda': 923, 'Mu': 924, 'Ntilde': 209, 'Nu': 925, 'OElig': 338, 'Oacute': 211, 'Ocirc': 212, 'Ograve': 210, 'Omega': 937, 'Omicron': 927, 'Oslash': 216, 'Otilde': 213, 'Ouml': 214, 'Phi': 934, 'Pi': 928, 'Prime': 8243, 'Psi': 936, 'Rho': 929, 'Scaron': 352, 'Sigma': 931, 'THORN': 222, 'Tau': 932, 'Theta': 920, 'Uacute': 218, 'Ucirc': 219,
     'Ugrave': 217, 'Upsilon': 933, 'Uuml': 220, 'Xi': 926, 'Yacute': 221, 'Yuml': 376, 'Zeta': 918, 'aacute': 225, 'acirc': 226, 'acute': 180, 'aelig': 230, 'agrave': 224, 'alefsym': 8501, 'alpha': 945, 'amp': 38, 'and': 8743, 'ang': 8736, 'aring': 229, 'asymp': 8776, 'atilde': 227, 'auml': 228, 'bdquo': 8222, 'beta': 946, 'brvbar': 166, 'bull': 8226, 'cap': 8745,
@@ -110,7 +110,7 @@ String::in = (haystack) ->
     haystack?.indexOf(this) >= 0
 String::unescape_htmlentities = ->
     if not '&'.in this
-        return this
+        return this.toString()
     this.replace(
         ///
             &(
@@ -122,7 +122,7 @@ String::unescape_htmlentities = ->
                     \w{1,8}
                 )
             );
-        ///,
+        ///g,
         (_, match) ->
             str = match
             if str[0] == '#'
@@ -345,12 +345,12 @@ class HTMLParser extends ParserBase
                     # Calling unknown_decl provides more flexibility though.
                     @unknown_decl data
                 return j + 1
-            if c in ['"', "'"]
+            if /'|"/.test(c)
                 m = regex.declstringlit.match @rawdata, j
                 if not m?
                     return -1 # incomplete
                 j = m.end
-            else if c.in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+            else if /[a-zA-Z]/.test(c)
                 [name, j] = @_scan_name j, i
             else if c.in @_decl_otherchars
                 j = j + 1
@@ -440,7 +440,7 @@ class HTMLParser extends ParserBase
                 @error 'malformed empty start tag'
             if next == ''
                 return -1
-            if next.in 'abcdefghijklmnopqrstuvwxyz=/ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+            if /[a-zA-Z=\/]/.test(next)
                 return -1
             @updatepos(i, j)
             @error 'malformed start tag'
