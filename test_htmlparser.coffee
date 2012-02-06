@@ -110,6 +110,14 @@ assert_equal 'string::count', 'aaabbbccc'.count(/[a|b]/g), 6
 assert_equal 'string::count', 'aaabbbccc'.count(/z/g), 0
 assert_ok 'string::in', 'foo'.in('foobar')
 assert_equal 'string::in', 'foo'.in('bar'), false
+
+assert_equal 'string::unescape_htmlentities',
+    '&#bad;'.unescape_htmlentities(), '&#bad;'
+assert_equal 'string::unescape_htmlentities',
+    '&gt;'.unescape_htmlentities(), '>'
+assert_equal 'string::unescape_htmlentities',
+    '&#0038;'.unescape_htmlentities(), '&'
+
 assert_equal 'RegExp::search',
     -> /xyz/g.search('abcdefg')
     null
