@@ -292,7 +292,7 @@ class HTMLParser extends ParserBase
     unescape: (s) ->
         @error 'unescape not implemented'
 
-module.exports =
+module?.exports =
     regex: regex
     HTMLParseError: HTMLParseError
     HTMLParser: HTMLParser
