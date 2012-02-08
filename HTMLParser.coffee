@@ -106,10 +106,10 @@ String::strip = ->
 String::count = (pattern) ->
     result = this.match(pattern)
     return if result? then result.length else 0
-String::in = (haystack) ->
-    haystack?.indexOf(this) >= 0
+String::contains = (haystack) ->
+    if haystack? then this.indexOf(haystack) >= 0 else false
 String::unescape_htmlentities = ->
-    if not '&'.in this
+    if not this.contains '&'
         return this.toString()
     this.replace(
         ///
@@ -274,7 +274,7 @@ class HTMLParser extends ParserBase
                     i = @updatepos i, k
                     continue
                 else
-                    if ';'.in @rawdata[i..] # bail by consuming &#
+                    if @rawdata[i..]?.contains ';' # bail by consuming &#
                         @handle_data @rawdata[0...2]
                         i = @updatepos i, 2
                     break
@@ -352,7 +352,7 @@ class HTMLParser extends ParserBase
                 j = m.end
             else if /[a-zA-Z]/.test(c)
                 [name, j] = @_scan_name j, i
-            else if c.in @_decl_otherchars
+            else if @_decl_otherchars?.contains c
                 j = j + 1
             else
                 @error 'unexpected character "#{c}" in declaration'
@@ -410,7 +410,7 @@ class HTMLParser extends ParserBase
         end = @rawdata[k...endpos]?.strip()
         if end not in ['>', '/>']
             [lineno, offset] = @getpos
-            if '\n'.in @__starttag_text
+            if @__starttag_text?.contains '\n'
                 lineno += @__starttag_text.count(/\n/g)
                 offset = @__starttag_text.length - @__starttag_text.lastIndexOf('\n')
             else
@@ -420,7 +420,7 @@ class HTMLParser extends ParserBase
             @handle_startendtag(tag, attrs)
         else
             @handle_starttag(tag, attrs)
-            if tag.in @cdata_elem
+            if @cdata_elem?.contains tag
                 @set_cdata_mode(tag)
         return endpos
 

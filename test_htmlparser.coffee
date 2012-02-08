@@ -99,17 +99,20 @@ assert_raises = (name, handler) ->
 assert_deep 'assert_deep', [], []
 assert_deep 'assert_deep', ['foo'], ['foo']
 assert_deep 'assert_deep', [['foo', 'bar']], [['foo', 'bar']]
+assert_deep 'assert_deep', [['foo', ['cat', 'dog']]], [['foo', ['cat', 'dog']]],
 
-assert_ok 'string::startswith', -> 'foobar'.startswith('foo')
-assert_ok 'string::startswith', -> 'foobar'.startswith('oob', 1)
+assert_ok 'string::startswith',
+    -> 'foobar'.startswith('foo')
+assert_ok 'string::startswith',
+    -> 'foobar'.startswith('oob', 1)
 assert_equal 'string::startswith', 'foobar'.startswith('bar'), false
 assert_equal 'string::strip', '  foo bar  '.strip(), 'foo bar'
 assert_equal 'string::strip', 'foo bar'.strip(), 'foo bar'
 assert_equal 'string::count', 'aaabbbccc'.count(/a/g), 3
 assert_equal 'string::count', 'aaabbbccc'.count(/[a|b]/g), 6
 assert_equal 'string::count', 'aaabbbccc'.count(/z/g), 0
-assert_ok 'string::in', 'foo'.in('foobar')
-assert_equal 'string::in', 'foo'.in('bar'), false
+assert_ok 'string::contains', 'foobar'.contains 'foo'
+assert_equal 'string::contains', 'foo'.contains('bar'), false
 
 assert_equal 'string::unescape_htmlentities',
     '&#bad;'.unescape_htmlentities(), '&#bad;'
