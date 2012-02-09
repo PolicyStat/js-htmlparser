@@ -1,6 +1,11 @@
 desc 'Build JavaScript'
 task :default do
-    `coffee -c src/lib/HTMLParser.coffee src/test/test_htmlparser.coffee`
+    message = "// This file was AUTOMATICALLY generated
+    var VERSION = '$(git describe --dirty)', BUILDDATE = '$(date)';"
+    `echo "#{message}" > src/lib/HTMLParser.js`
+    `echo "#{message}" > src/test/test_htmlparser.js`
+    `coffee -p src/lib/HTMLParser.coffee >> src/lib/HTMLParser.js`
+    `coffee -p src/test/test_htmlparser.coffee >> src/test/test_htmlparser.js`
 end
 
 desc 'Run webserver for testing'
