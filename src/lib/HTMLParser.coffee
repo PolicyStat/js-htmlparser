@@ -115,25 +115,21 @@ String::unescape_htmlentities = ->
             );
         ///g,
         (_, match) ->
-            str = match
-            if str[0] == '#'
-                str = str[1..]
-                if str[0] in ['x', 'X']
-                    c = parseInt(str[1..], 16)
+            if match[0..0] is '#'
+                if match[1..1] in ['x', 'X']
+                    c = parseInt(match[2..], 16)
                 else
-                    c = parseInt(str, 10)
+                    c = parseInt(match[1..], 10)
                 if c
                     code = String.fromCharCode(c)
                     if code isnt '\u0000'
                         return code
-                return '&#'+str+';'
             else
-                if htmlentitydefs[str]?
-                    code = String.fromCharCode(htmlentitydefs[str])
+                if htmlentitydefs[match]?
+                    code = String.fromCharCode(htmlentitydefs[match])
                     if code isnt '\u0000'
                         return code
-                return '&'+str+';'
-            return match
+            '&'+match+';'
     )
 
 RegExp::search = (str, start=0) ->
@@ -163,7 +159,7 @@ class ParserBase
         @lineno = 1
         @offset = 0
     getpos: ->
-        return [@lineno, @offset]
+        [@lineno, @offset]
 
     # Internal -- update line number and offset.  This should be
     # called for each piece of data exactly once, in order -- in other
@@ -314,7 +310,7 @@ class HTMLParser extends ParserBase
         if @rawdata[j...j+2] == '--'
             # Locate --.*-- as the body of the comment
             return @parse_comment i
-        else if @rawdata[j] == '['
+        else if @rawdata[j..j] == '['
             return @parse_marked_section i
         else
             [decltype, j] = @_scan_name j, i
@@ -323,7 +319,7 @@ class HTMLParser extends ParserBase
         if decltype == 'doctype'
             @_decl_otherchars = ''
         while j < @rawdata.length
-            c = @rawdata[j]
+            c = @rawdata[j..j]
             if c == '>'
                 # end of declaration syntax
                 data = @rawdata[i+2...j]
@@ -388,7 +384,7 @@ class HTMLParser extends ParserBase
             if not m
                 break
             [attrname, rest, attrvalue] = m.group[1..3]
-            if not rest?
+            if not rest? or rest.length is 0
                 attrvalue = null
             else if (attrvalue[...1] == "'" == attrvalue[-1..]) or
                     (attrvalue[...1] == '"' == attrvalue[-1..])

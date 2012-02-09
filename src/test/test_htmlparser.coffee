@@ -91,11 +91,11 @@ assert_equal = (name, actual, expected) ->
         expected = expected() if typeof expected is 'function'
         equal actual, expected
     )
-assert_deep = (name, actual, expected) ->
+assert_deep = (name, actual, expected, result=true) ->
     test(name, ->
         actual = actual() if typeof actual is 'function'
         expected = expected() if typeof expected is 'function'
-        QUnit.push(deep_equal(actual, expected),
+        QUnit.push(deep_equal(actual, expected) == result,
             inspect(actual),
             inspect(expected))
     )
@@ -108,10 +108,21 @@ assert_raises = (name, handler) ->
 test_runner = ->
     QUnit.init()
     QUnit.config.updateRate = 0
-    assert_deep 'assert_deep', [], []
-    assert_deep 'assert_deep', ['foo'], ['foo']
-    assert_deep 'assert_deep', [['foo', 'bar']], [['foo', 'bar']]
-    assert_deep 'assert_deep', [['foo', ['cat', 'dog']]], [['foo', ['cat', 'dog']]],
+
+    # JavaScript sanity checks
+    assert_equal 'parseInt radix 10', parseInt('010', 10), 10
+    assert_equal 'parseInt radix 16', parseInt('010', 16), 16
+    assert_equal 'parseInt radix 8', parseInt('010', 8), 8
+    assert_equal 'parseInt default', parseInt('010'), 8
+    assert_equal 'string::fromCharCode', String.fromCharCode(65), 'A'
+    assert_equal 'string::fromCharCode', String.fromCharCode(38), '&'
+
+    assert_deep 'assert_deep empty', [], []
+    assert_deep 'assert_deep single', ['foo'], ['foo']
+    assert_deep 'assert_deep double', [['foo', 'bar']], [['foo', 'bar']]
+    assert_deep 'assert_deep triple', [['foo', ['cat', 'dog']]], [['foo', ['cat', 'dog']]]
+    assert_deep 'assert_deep triple !=',
+        [['foo', ['mouse', 'dog']]], [['foo', ['cat', 'dog']]], false
 
     assert_ok 'string::startswith',
         -> 'foobar'.startswith('foo')
@@ -126,15 +137,15 @@ test_runner = ->
     assert_ok 'string::contains', 'foobar'.contains 'foo'
     assert_equal 'string::contains', 'foo'.contains('bar'), false
 
-    assert_equal 'string::unescape_htmlentities',
+    assert_equal 'string::unescape_htmlentities #bad',
         '&#bad;'.unescape_htmlentities(), '&#bad;'
-    assert_equal 'string::unescape_htmlentities',
+    assert_equal 'string::unescape_htmlentities apos',
         '&apos;'.unescape_htmlentities(), "'"
-    assert_equal 'string::unescape_htmlentities',
+    assert_equal 'string::unescape_htmlentities gt',
         '&gt;'.unescape_htmlentities(), '>'
-    assert_equal 'string::unescape_htmlentities',
+    assert_equal 'string::unescape_htmlentities #0038',
         '&#0038;'.unescape_htmlentities(), '&'
-    assert_equal 'string::unescape_htmlentities',
+    assert_equal 'string::unescape_htmlentities complex',
         '&#bad;&gt;&#0038;'.unescape_htmlentities(), '&#bad;>&'
 
     assert_equal 'RegExp::search',
@@ -216,16 +227,16 @@ test_runner = ->
         -> regex.locatestarttagend.exec('<a foo=bar>')?[0]
         '<a foo=bar'
 
-    assert_deep 'data check',
+    assert_deep 'events data',
         -> get_events(['foo'])
         [['data', 'foo']]
-    assert_deep 'comment check',
+    assert_deep 'events comment',
         -> get_events(['<!-- foo -->'])
         [['comment', ' foo ']]
     assert_deep 'simple self-closing tag check',
         -> get_events(['<p/>'])
         [['starttagend', 'p', []]]
-    assert_deep 'simple tag check',
+    assert_deep 'events open tag, data, close tag',
         -> get_events(['<p>foo</p>'])
         [
             ['starttag', 'p', [] ],
@@ -235,7 +246,7 @@ test_runner = ->
     # Strangely, this *is* supposed to test that overlapping
     # elements are allowed.  HTMLParser is more geared toward
     # lexing the input that parsing the structure.
-    assert_deep 'bad nesting',
+    assert_deep 'events badly nested tags',
         -> get_events(['<a><b></a></b>'])
         [
             ['starttag', 'a', []],
@@ -244,7 +255,7 @@ test_runner = ->
             ['endtag', 'b']
         ]
 
-    assert_deep 'simple attribute check',
+    assert_deep 'events open tag attributes',
         -> get_events(['<p class="foo">bar</p>'])
         [
             ['starttag', 'p', [['class', 'foo']] ],
@@ -252,7 +263,15 @@ test_runner = ->
             ['endtag', 'p']
         ]
 
-    assert_deep 'multiple attribute check',
+    assert_deep 'events open tag attributes empty value',
+        -> get_events(['<p class="">bar</p>'])
+        [
+            ['starttag', 'p', [['class', '']] ],
+            ['data', 'bar'],
+            ['endtag', 'p']
+        ]
+
+    assert_deep 'events open tag multiple attributes',
         -> get_events(['<p class="foo" style="moo">bar</p>'])
         [
             ['starttag', 'p', [
@@ -262,7 +281,7 @@ test_runner = ->
             ['endtag', 'p']
         ]
 
-    assert_deep 'self-closing tag with attributes',
+    assert_deep 'events self-closing tag with attributes',
         -> get_events(['<p class="foo" style="moo"/>'])
         [
             ['starttagend', 'p', [
@@ -270,26 +289,26 @@ test_runner = ->
             ]]
         ]
 
-    assert_deep 'bare ampersands',
+    assert_deep 'events data ampersands',
         -> get_events(['this text & contains & ampersands &'])
         [['data', 'this text & contains & ampersands &']]
 
-    assert_deep 'bare pointy/angle brackets',
+    assert_deep 'events bare pointy/angle brackets',
         -> get_events(['this < text > contains < bare>pointy< brackets'])
         [['data', 'this < text > contains < bare>pointy< brackets']]
 
-    assert_raises 'parse error on </>',
+    assert_raises 'events parse error on </>',
         -> get_events(['</>'])
 
-    assert_deep 'declaration',
+    assert_deep 'events declaration',
         -> get_events(['<!DOCTYPE html>'])
         [['decl', 'DOCTYPE html']]
 
-    assert_deep 'empty declaration',
+    assert_deep 'events empty declaration',
         -> get_events(['<!>'])
         []
 
-    assert_deep 'simple entity ref',
+    assert_deep 'events entityref charref',
         -> get_events(['<p>&entity;&#32;</p>'])
         [
             ['starttag', 'p', []],
@@ -298,13 +317,13 @@ test_runner = ->
             ['endtag', 'p']
         ]
 
-    assert_deep 'attribute entity replacement',
+    assert_deep 'events start tag attribute entity replacement',
         -> get_events(["<a b='&amp;&gt;&lt;&quot;&apos;'>"])
         [
             ["starttag", "a", [["b", "&><\"'"]]]
         ]
 
-    assert_deep 'simple html',
+    assert_deep 'events simple html',
         -> get_events(["""
                         <!DOCTYPE html PUBLIC 'foo'>
                         <HTML>&entity;&#32;
@@ -326,7 +345,10 @@ test_runner = ->
             ['data', '\n'],
             ['comment', 'comment1a\n-></foo><bar>&lt;<?pi?></foo<bar\ncomment1b'],
             ['data', '\n'],
-            ['starttag', 'img', [['src', 'Bar'], ['ismap', null]]],
+            ['starttag', 'img', [
+                ['src', 'Bar'],
+                ['ismap', null]
+            ]],
             ['data', 'sample\ntext\n'],
             ['charref', 'x201C'],
             ['data', '\n'],
