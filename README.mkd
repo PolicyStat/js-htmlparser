@@ -1,7 +1,20 @@
-js-htmlparser
-=
+# js-htmlparser
 
-Running the tests
-==
+The goal of this project is to provide full HTML parsing/lexing in
+JavaScript
+
+Some of the code used in this project is based on [HTMLParser.py](http://hg.python.org/cpython/file/2.7/Lib/HTMLParser.py) - Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006 Python Software Foundation; All Rights Reserved. See LICENSE.HTMLParser.
+
+## Running the tests
+
+From the command line:
 
     $ coffee test_htmlparser.coffee
+
+From a web browser:
+
+    $ coffee -c HTMLParser.coffee test_htmlparser.coffee
+    $ browser test.html
+
+## Changes
+

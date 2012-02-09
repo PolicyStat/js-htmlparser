@@ -1,3 +1,7 @@
+##
+# http://hg.python.org/cpython/file/2.7/Lib/HTMLParser.py
+# Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006 Python Software Foundation; All Rights Reserved
+##
 regex =
     interesting_normal: /[&<]/
     incomplete: /&[a-zA-Z#]/
