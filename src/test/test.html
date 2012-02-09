@@ -9,7 +9,13 @@
         <script src='./test_htmlparser.js' type='text/javascript'></script>
         <script src='http://code.jquery.com/jquery-latest.js'></script>
         <script type='text/javascript'>
-            $(window.test_htmlparser);
+            $(function() {
+                $('#qunit-header').text('js-htmlparser | ' +
+                    window.HTMLParser.VERSION + ' | ' +
+                    window.HTMLParser.BUILDDATE);
+                window.test_htmlparser();
+            });
+
         </script>
     </head>
     <body>
