@@ -5,6 +5,8 @@ JavaScript
 
 Some of the code used in this project is based on [HTMLParser.py](http://hg.python.org/cpython/file/2.7/Lib/HTMLParser.py) - Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006 Python Software Foundation; All Rights Reserved. See LICENSE.HTMLParser.
 
+js-htmlparser is built using [CoffeeScript 1.2.0](http://www.coffeescript.org). You will need to have the 'coffee' command on your PATH to compile or test the project.
+
 ## Compiling
 
 The default rake task is to compile
