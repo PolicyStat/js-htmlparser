@@ -481,7 +481,12 @@ class HTMLParser extends ParserBase
     unknown_decl: (data) ->
         @error "unknown declaration #{data}"
 
-module?.exports =
+namespace =
     regex: regex
     HTMLParseError: HTMLParseError
     HTMLParser: HTMLParser
+
+if not module? or not require?
+    window.HTMLParser = namespace
+else
+    module.exports = namespace
