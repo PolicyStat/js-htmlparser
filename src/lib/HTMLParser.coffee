@@ -1,6 +1,8 @@
 ###
-http://hg.python.org/cpython/file/2.7/Lib/HTMLParser.py
-Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006 Python Software Foundation; All Rights Reserved
+Code is inspired by http://hg.python.org/cpython/file/2.7/Lib/HTMLParser.py
+HTMLParser.py is Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008,
+2009, 2010, 2011, 2012 Python Software Foundation; All Rights Reserved.
+See http://hg.python.org/cpython/file/2.7/LICENSE
 ###
 regex =
     interesting_normal: /[&<]/
