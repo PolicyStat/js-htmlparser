@@ -2,7 +2,7 @@ if require?
     util = require('util')
     QUnit = require('./qunit.js').QUnit
     qunitTap = require('./qunit-tap.js').qunitTap
-    HTMLParser = require('./HTMLParser.coffee')
+    HTMLParser = require('../lib/HTMLParser.coffee')
 
 HTMLParser ?= window.HTMLParser
 QUnit ?= window.QUnit
