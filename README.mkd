@@ -5,16 +5,26 @@ JavaScript
 
 Some of the code used in this project is based on [HTMLParser.py](http://hg.python.org/cpython/file/2.7/Lib/HTMLParser.py) - Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006 Python Software Foundation; All Rights Reserved. See LICENSE.HTMLParser.
 
+## Compiling
+
+The default rake task is to compile
+
+    $ rake
+
 ## Running the tests
 
 From the command line:
 
-    $ coffee test_htmlparser.coffee
+    $ rake test
 
 From a web browser:
 
-    $ coffee -c HTMLParser.coffee test_htmlparser.coffee
-    $ browser test.html
+    $ rake 
+    $ browser src/test/test.html
 
-## Changes
+HTTP Server:
+    
+    $ rake
+    $ rake serve
+    $ browser http://localhost:9000/src/test/test.html
 
