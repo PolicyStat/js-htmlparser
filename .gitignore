@@ -1,1 +1,2 @@
-html
+src/lib/*.js
+src/test/*.js
