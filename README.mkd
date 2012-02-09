@@ -1,7 +1,33 @@
-js-htmlparser
-=
+# js-htmlparser
 
-Running the tests
-==
+The goal of this project is to provide full HTML parsing/lexing in JavaScript.
 
-    $ coffee test_htmlparser.coffee
+js-htmlparser is built using [CoffeeScript 1.2.0](http://www.coffeescript.org). You will need to have the 'coffee' command on your PATH to compile or test the project.
+
+## Compiling
+
+The default rake task is to compile
+
+    $ rake
+
+## Running the tests
+
+From the command line:
+
+    $ rake test
+
+From a web browser:
+
+    $ rake 
+    $ browser src/test/test.html
+
+HTTP Server:
+    
+    $ rake
+    $ rake serve
+    $ browser http://localhost:9000/src/test/test.html
+
+## HTMLParser.py
+
+Some of the code used in this project is inspired on [HTMLParser.py](http://hg.python.org/cpython/file/2.7/Lib/HTMLParser.py) - *Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012 Python Software Foundation; All Rights Reserved.* See [LICENSE](http://hg.python.org/cpython/file/2.7/LICENSE).
+
